@@ -1,0 +1,74 @@
+{
+    "expand":"names,schema",
+    "startAt":0,
+    "maxResults":100,
+    "total":1,
+    "issues":[
+      {
+         "key":"AAA-0",
+         "fields":{
+            "issuetype":{
+               "name":"Story"
+            },
+            "parent":{},
+            "status":{
+               "name":"GOLIVE"
+            },
+            "summary":"this is a story"
+         }
+      },
+      {
+         "key":"AAA-1",
+         "fields":{
+            "issuetype":{
+               "name":"TECH TASK"
+            },
+            "parent":{},
+            "status":{
+               "name":"Completata"
+            },
+            "summary":"this is a story"
+         }
+      },     
+      {
+         "key":"AAA-2",
+         "fields":{
+            "issuetype":{
+               "name":"BUG"
+            },
+            "parent":{},
+            "status":{
+               "name":"FIXED"
+            },
+            "summary":"this is a story"
+         }
+      },
+      {
+         "key":"AAA-3",
+         "fields":{
+            "issuetype":{
+               "name":"BUG"
+            },
+            "parent":{},
+            "status":{
+               "name":"RELEASED"
+            },
+            "summary":"this is a story"
+         }
+      },
+      {
+          "key":"AAA-4",
+          "fields":{
+             "issuetype":{
+                "name":"GENERIC SUBTASK",
+                "subtask":true
+             },
+             "parent":{},
+             "status":{
+                "name":"WORK IN PROGRESS"
+             },
+             "summary":"do it"
+          }
+       }
+    ]
+ }
