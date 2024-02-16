@@ -134,7 +134,7 @@ func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) er
 			return err
 		}
 
-		m.AddCommitDetails(repo, cds)
+		m.addCommitDetails(repo, cds)
 	}
 
 	return nil
@@ -164,27 +164,28 @@ func (i CategoryType) MarshalYAML() (interface{}, error) {
 }
 
 func (m *Model) EnrichWithIssueTrackers() error {
-	for _, repo := range m.gValues.GitRepos {
+	for i := range m.gValues.GitRepos {
+		repo := &m.gValues.GitRepos[i]
 		err := m.enrichRepoWithIssueTracker(repo)
 		if err != nil {
 			return err
 		}
 
-		sv, _ := ComputeSemanticVersion(repo.FromTag, repo.HasBreaking, repo.HasNewFeature, repo.HasBugFixed)
+		sv, _ := computeSemanticVersion(repo.FromTag, repo.HasBreaking, repo.HasNewFeature, repo.HasBugFixed)
 		fmt.Printf("current version for the repo %s is: %s, suggested version %s", repo.Label, repo.FromTag, sv)
 	}
 
 	return nil
 }
 
-func (m *Model) enrichRepoWithIssueTracker(repo Repo) error {
+func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 	for _, issuesTracker := range m.issueTrackers {
 		fmt.Printf("\nExtracting issues from the Issues Tracker %s for the Repo %s\n", issuesTracker.Type(), repo.Label)
 		issues, err := issuesTracker.GetIssues(repo.CommitDetails)
 		if err != nil {
 			return err
 		}
-		hasBreaking, hasNewFeature, hasBugFixed := m.AddFoundIssues(repo.Label, issues, issuesTracker.Type())
+		hasBreaking, hasNewFeature, hasBugFixed := m.addFoundIssues(repo.Label, issues, issuesTracker.Type())
 		repo.HasBreaking = repo.HasBreaking || hasBreaking
 		repo.HasNewFeature = repo.HasNewFeature || hasNewFeature
 		repo.HasBugFixed = repo.HasBugFixed || hasBugFixed
@@ -198,13 +199,13 @@ func (m *Model) enrichRepoWithIssueTracker(repo Repo) error {
 		if err != nil {
 			return err
 		}
-		m.AddKnownIssues(repo.Label, knownIssues, issuesTracker.Type())
+		m.addKnownIssues(repo.Label, knownIssues, issuesTracker.Type())
 	}
 
 	return nil
 }
 
-func (m *Model) AddFoundIssues(label string, issues []ExtractedIssue, it parsers.IssueTrackerType) (bool, bool, bool) {
+func (m *Model) addFoundIssues(label string, issues []ExtractedIssue, it parsers.IssueTrackerType) (bool, bool, bool) {
 	var hasBreaking, hasNewFeature, hasBugFixed bool
 
 	for _, issue := range issues {
@@ -235,7 +236,7 @@ func (m *Model) AddFoundIssues(label string, issues []ExtractedIssue, it parsers
 	return hasBreaking, hasNewFeature, hasBugFixed
 }
 
-func (m *Model) AddKnownIssues(label string, issues []ExtractedIssue, it parsers.IssueTrackerType) {
+func (m *Model) addKnownIssues(label string, issues []ExtractedIssue, it parsers.IssueTrackerType) {
 	for _, issue := range issues {
 		issue.IssueTrackerType = it
 		m.gValues.KnownIssues[label] = append(m.gValues.KnownIssues[label], issue)
@@ -243,7 +244,7 @@ func (m *Model) AddKnownIssues(label string, issues []ExtractedIssue, it parsers
 	}
 }
 
-func (m *Model) AddCommitDetails(repo Repo, cds []git.CommitDetail) {
+func (m *Model) addCommitDetails(repo Repo, cds []git.CommitDetail) {
 	repo.CommitDetails = cds
 	m.gValues.GitRepos = append(m.gValues.GitRepos, repo)
 
@@ -279,7 +280,7 @@ func (m *Model) AddCommitDetails(repo Repo, cds []git.CommitDetail) {
 	}
 }
 
-func ComputeSemanticVersion(currentVersion string, hasBreaking, hasNewFeature, hasBugFixed bool) (string, error) {
+func computeSemanticVersion(currentVersion string, hasBreaking, hasNewFeature, hasBugFixed bool) (string, error) {
 	v := strings.Split(currentVersion, ".")
 	if len(v) < 3 {
 		return "", fmt.Errorf("the current version do not have a semantic version format")

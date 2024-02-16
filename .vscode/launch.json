@@ -12,7 +12,7 @@
             "program": "${workspaceRoot}",
             "args": [
                 "enrich",
-                "examples/bb-dhr-model.yaml"
+                "../examples/jig/bb-dhr-model.yaml"
             ]
         }
 
