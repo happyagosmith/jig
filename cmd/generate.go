@@ -15,7 +15,7 @@ import (
 func newGenerateCmd() *cobra.Command {
 	generateCmd := &cobra.Command{
 		Use:   "generate [template] -m [model.yaml]",
-		Short: "generate [template] -m [model.yaml]",
+		Short: "Render the template using the values of the model.yaml file",
 		Long:  `Render the template using the values of the model.yaml file
 		
 In case --withEnrich is used, before rendering the template, jig executes the enrichment of the model in memory with

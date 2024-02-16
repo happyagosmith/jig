@@ -18,14 +18,14 @@ func addJiraOpt(label string, value string, opts *[]trackers.JiraOpt, opt func(s
 	fmt.Printf("Using %s -> %s\n", label, value)
 	filters := strings.Split(value, ",")
 	if len(filters) == 0 {
-		CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
+    CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
 	}
 	for _, cff := range filters {
-		f := strings.Split(cff, ":")
-		if len(f) != 2 {
-			CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
-		}
-		*opts = append(*opts, opt(f[0], f[1]))
+    f := strings.Split(cff, ":")
+    if len(f) != 2 {
+    	CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
+    }
+    *opts = append(*opts, opt(f[0], f[1]))
 	}
 }
 
@@ -37,10 +37,10 @@ func EnrichModel(b []byte) []byte {
 
 	opts = append(opts, trackers.WithKnownIssueJql(viper.GetString("jiraKnownIssuesJQL")))
 	jiraTracker, err := trackers.NewJira(
-		viper.GetString("jiraURL"),
-		viper.GetString("jiraUsername"),
-		viper.GetString("jiraPassword"),
-		opts...,
+    viper.GetString("jiraURL"),
+    viper.GetString("jiraUsername"),
+    viper.GetString("jiraPassword"),
+    opts...,
 	)
 	CheckErr(err)
 
@@ -48,10 +48,10 @@ func EnrichModel(b []byte) []byte {
 	CheckErr(err)
 
 	err = model.EnrichWithGit(
-		viper.GetString("gitURL"),
-		viper.GetString("gitToken"),
-		viper.GetString("issuePattern"),
-		viper.GetString("customCommitPattern"))
+    viper.GetString("gitURL"),
+    viper.GetString("gitToken"),
+    viper.GetString("issuePattern"),
+    viper.GetString("customCommitPattern"))
 	CheckErr(err)
 
 	err = model.EnrichWithIssueTrackers()
@@ -64,7 +64,7 @@ func EnrichModel(b []byte) []byte {
 }
 
 func setEnrichFlags(cmd *cobra.Command) {
-	cmd.Flags().String("issuePattern", `(^j_(?P<jira_1>.*)$)|(?P<jira_2>^[^\_]+$)`, "Pattern to apply on the git commit message to extract the issue keys from the message. The pattern should include the named groups composed by noun with number (e.g. jira1). The noun refers to the issue tracker (at the moment only jira is supproted). The number is allowed in orde to define more than one pattern for the same issu tracker (this is usefull if the commit message format is changed over the time). The pattern should be a valid regex pattern.")
+	cmd.Flags().String("issuePattern", `(^j_(?P<jira_1>.*)$)|(?P<jira_2>^[^\_]+$)`, "Pattern to apply on the git commit message to extract the issue keys from the message. The pattern should include the named groups composed by noun with number (e.g. jira_1). The noun refers to the issue tracker (at the moment only jira is supported). The number has the purpose to define more than one pattern for the same issue tracker (this is usefull if the commit message format is changed over the time). The pattern must be a valid regex pattern.")
 	viper.BindPFlag("issuePattern", cmd.Flags().Lookup("issuePattern"))
 
 	cmd.Flags().String("customCommitPattern", `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the git commit message to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
@@ -97,62 +97,115 @@ func setEnrichFlags(cmd *cobra.Command) {
 
 func newEnrichCmd() *cobra.Command {
 	enrichCmd := &cobra.Command{
-		Use:   "enrich [model.yaml]",
-		Short: "enrich [model.yaml]",
-		Long: `Enrich the model.yaml file with the generated values extracted from Git and Jira.
+    Use:   "enrich [model.yaml]",
+    Short: "Enrich the model.yaml file with the generated values extracted from Git and Jira.",
+    Long: `Enrich the model.yaml file with the generated values extracted from Git and Jira.
 
 The model.yaml file should include the list "gitRepo" with an element for each repo 
 to be processed. Following an example:	
-    gitRepos:
-    - ID: xxx          # id of the gitLab repo
-      fromTag: 1.0.0   # tag from which process the commits
-      toTag: 2.0.0     # tag to which process the commits 
-      label: repoLabel # label to assign to the gitLab repo
+    services:
+    - gitRepoID: xxx           # id of the gitLab repo
+      previousVersion: 1.0.0   # tag from which process the commits
+      version: 2.0.0           # tag to which process the commits 
+      label: service1          # label to assign to the gitLab repo
 	  
 The file model.yaml will be enriched with the key "generatedValues" including the values 
 extracted from Git and Jira. Following an example:
 
-    generatedValues:
-       features:
-       - category: repoLabel
-         parent: XXX-1234
-       	 key: XXX-AAAA
-         summary: This is a feature
-         status: Completata
-         type: TECH TASK
-       bugs:
-       - category: repoLabel
-         parent: XXX-1234
-         key: XXX-BBBB
-         summary: 'This is a bug'
-         status: RELEASED
-         type: Bug
-       knownIssues:
-       - category: repoLabel
-         parent: XXX-1234
-         key: XXX-CCCC
-         summary: "this is a known issue
-         status: Creato
-         type: Bug
-      gitRepos:
-      - label: repoLabel
-        extractedKeys:
-        - XXX-AAAA
-        - XXX-BBBB
+generatedValues:
+    features: 
+    	service1:
+    	- issueKey: AAA-000
+          issueSummary: 'Fix Comment from the issue tracker'
+          issueType: TECH TASK
+          issueStatus: Completata
+          issueTrackerType: JIRA
+          category: CLOSED_FEATURE
+          isbreakingchange: true
+    bugs:
+    	service1:
+    	- issueKey: AAA-111
+          issueSummary: 'Fix Comment from the issue tracker'
+          issueType: Bug
+          issueStatus: RELEASED
+          issueTrackerType: JIRA
+          category: FIXED_BUG
+          isBreakingChange: false
+    	service2:
+    	- issueKey: AAA-222
+          issueSummary: 'Fix Comment from the issue tracker'
+          issueType: Bug
+          issueStatus: FIXED
+          issueTrackerType: JIRA
+          category: FIXED_BUG
+          isBreakingChange: false
+    knownIssues:
+    	service2:
+    	- issueKey: AAA-333
+          issueType: TECH DEBT
+          issueSummary: To be implemented
+          issueStatus: Da completare
+          issueTrackerType: JIRA
+          category: OTHER
+          isBreakingChange: false
+    breakingChange: 
+    	service1:
+    	- issueKey: AAA-000
+          issueSummary: 'Fix Comment from the issue tracker'
+          issueType: TECH TASK
+          issueStatus: Completata
+          issueTrackerType: JIRA
+          category: CLOSED_FEATURE
+          isbreakingchange: true
+    gitRepos:
+      - gitRepoID: 1234
+    	label: service1
+    	previousVersion: 0.0.1
+    	version: 0.0.2
+    	extractedKeys:
+    	- category: BUG_FIX
+    	  issueKey: AAA-000
+    	  summary: 'fix comment from git'
+    	  message: 'fix(j_AAA-000)!: fix comment from git'
+    	  issueTrackerType: JIRA
+    	  isbreakingchange: true
+    	- issueKey: AAA-111
+    	  summary: 'fix comment from git'
+    	  message: '[AAA-111] fix comment from git'
+    	  issueTrackerType: JIRA
+    	  isbreakingchange: false
+      - gitRepoID: 5678
+    	label: service2
+    	jiraComponent: jComponent # used to retrieve the known issues
+    	jiraProject: jProject # used to retrieve the known issues
+    	previousVersion: 1.2.0
+    	version: 1.2.1
+    	extractedKeys:
+    	- category: BUG_FIX
+    	  issueKey: AAA-222
+    	  summary: 'fix comment from git'
+    	  message: 'fix(j_AAA-222): fix comment from git'
+    	  issueTrackerType: JIRA
+    	  isbreakingchange: false
+    	- issueKey: AAA-333
+    	  summary: 'comment from git'
+    	  message: '[AAA-333] comment from git'
+    	  issueTrackerType: JIRA
+    	  isbreakingchange: false
 `,
-		Args: func(cmd *cobra.Command, args []string) error {
-			return cobra.ExactArgs(1)(cmd, args)
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			v, err := os.ReadFile(args[0])
-			CheckErr(err)
+    Args: func(cmd *cobra.Command, args []string) error {
+    	return cobra.ExactArgs(1)(cmd, args)
+    },
+    RunE: func(cmd *cobra.Command, args []string) error {
+    	v, err := os.ReadFile(args[0])
+    	CheckErr(err)
 
-			b := EnrichModel(v)
-			err = os.WriteFile(args[0], b, 0644)
-			CheckErr(err)
+    	b := EnrichModel(v)
+    	err = os.WriteFile(args[0], b, 0644)
+    	CheckErr(err)
 
-			return nil
-		},
+    	return nil
+    },
 	}
 	setEnrichFlags(enrichCmd)
 	return enrichCmd

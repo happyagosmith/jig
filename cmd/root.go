@@ -27,8 +27,16 @@ var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "jig",
-	Short: "A brief description of your application",
-	Long:  `A longer description`,
+	Short: "Jig is a tool designed to automate the creation of release notes.",
+	Long: `Jig is a tool designed to automate the creation of release notes for 
+software products composed of one or more components, each with its own Git 
+repository. Jig leverages the information found in commit messages across these 
+repositories and enriches it with details from the issue tracker (e.g. Jira).
+
+Jig has two main objectives: firstly, to augment a model.yaml file, and secondly, 
+to generate a release note that is based on the improved model.yaml file and 
+conforms to a particular template.
+	`,
 }
 
 func CheckErr(e error) {

@@ -74,10 +74,10 @@ Jig uses a separate configuration file named `config.yaml` to connect to Git and
 
 ```yaml
 jiraURL: "https://jiraURL/"
-jiraUsername: "jiraUsername"
-jiraPassword: "jiraPassword"
-gitURL: "https://gitURL/"
-gitToken: "gitToken"
+jiraUsername: "userEmail"
+jiraPassword: "userJiraToken"
+gitURL: "https://gitlab.com/"
+gitToken: "userGitToken"
 ```
 
 2. **Parsing Commit Messages**: Once it has access to the repositories, Jig parses the commit messages. If the commit messages follow a certain format (like the Conventional Commits format), Jig extracts useful information such as the type of the commit (fix, feat, etc.) and a short summary of the changes.

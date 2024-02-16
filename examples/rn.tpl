@@ -1,5 +1,5 @@
 # RELEASE NOTE
-Questo è un esempio di Release Note template che i value generati da jig
+This is an example of Release Note that uses the generated valuse by jig
 
 # DETTAGLI RILASCIO
 
@@ -12,8 +12,6 @@ Questo è un esempio di Release Note template che i value generati da jig
 {{- end }}
 
 # NUOVA BASELINE
-helm chart: {{ .helmChart }}
-
 |**Nome servizio**             | **versione** |
 |------------------------------|--------------|
 {{- range .services }}
