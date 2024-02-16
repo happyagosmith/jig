@@ -142,7 +142,7 @@ func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) er
 
 type IssuesTracker interface {
 	GetIssues(cds []git.CommitDetail) ([]ExtractedIssue, error)
-	GetKnownIssues(category, project, component string) ([]ExtractedIssue, error)
+	GetKnownIssues(project, component string) ([]ExtractedIssue, error)
 	Type() parsers.IssueTrackerType
 }
 
@@ -194,7 +194,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo Repo) error {
 			continue
 		}
 
-		knownIssues, err := issuesTracker.GetKnownIssues(repo.Component, repo.Project, repo.Component)
+		knownIssues, err := issuesTracker.GetKnownIssues(repo.Project, repo.Component)
 		if err != nil {
 			return err
 		}

@@ -154,13 +154,29 @@ func (j Jira) extractIssueCategory(ji jira.Issue) model.CategoryType {
 	return model.OTHER
 }
 
-func (j Jira) GetKnownIssues(category, project, component string) ([]model.ExtractedIssue, error) {
+func (j Jira) GetKnownIssues(project, component string) ([]model.ExtractedIssue, error) {
 	opt := &jira.SearchOptions{
 		MaxResults: 1000,
 		StartAt:    0,
 	}
+	jqls := []string{}
+	if j.jqlKnownIssue != "" {
+		jqls = append(jqls, j.jqlKnownIssue)
+	}
 
-	jql := fmt.Sprintf(j.jqlKnownIssue+" and project = \"%s\" and component =\"%s\"", project, component)
+	if project != "" {
+		jqls = append(jqls, fmt.Sprintf("project = \"%s\"", project))
+	}
+
+	if component != "" {
+		jqls = append(jqls, fmt.Sprintf("component = \"%s\"", component))
+	}
+
+	if len(jqls) == 0 {
+		return nil, nil
+	}
+
+	jql := strings.Join(jqls, " and ")
 	fmt.Printf("\nRetrieving known issues using Jira jql \"%s\"\n", jql)
 	jIssues, _, err := j.client.Issue.Search(jql, opt)
 	if err != nil {
