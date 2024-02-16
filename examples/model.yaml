@@ -1,0 +1,11 @@
+services:
+- gitRepoID: 1234
+  label: service1
+  previousVersion: 0.0.1
+  version: 0.0.2
+- gitRepoID: 5678
+  jiraComponent: jComponent # used to retrieve the known issues from jira
+  jiraProject: jProject # used to retrieve the known issues from jira
+  label: service2
+  previousVersion: 1.2.0
+  version: 1.2.1

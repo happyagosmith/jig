@@ -217,7 +217,7 @@ First, ensure that you have a compatible version of [Go](https://go.dev/) instal
 To install Jig globally, execute the following command:
 
 ```shell
-go install github.com/happyagosmith/jig
+go install github.com/happyagosmith/jig@latest
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
