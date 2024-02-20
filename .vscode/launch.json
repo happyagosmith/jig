@@ -11,8 +11,13 @@
             "mode": "debug",
             "program": "${workspaceRoot}",
             "args": [
-                "enrich",
-                "../examples/jig/bb-dhr-model.yaml"
+                "generate",
+                "--gitURL",
+                "https://ciccio",
+                "--withEnrich",
+                "-m",
+                "../examples/jig/bb-dhr-model.yaml",
+                "../examples/jig/rn.tpl"
             ]
         }
 

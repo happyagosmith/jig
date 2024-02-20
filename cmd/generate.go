@@ -46,6 +46,6 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 	viper.BindPFlag("model", generateCmd.Flags().Lookup("model"))
 	generateCmd.Flags().Bool("withEnrich", false, "If true, enrich the model before generate")
 	viper.BindPFlag("withEnrich", generateCmd.Flags().Lookup("withEnrich"))
-	setEnrichFlags(generateCmd)
+	
 	return generateCmd
 }
