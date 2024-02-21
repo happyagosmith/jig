@@ -17,6 +17,8 @@ package main
 
 import "github.com/happyagosmith/jig/cmd"
 
+var version string
+
 func main() {
-	cmd.Execute()
+	cmd.Execute(version)
 }

@@ -100,6 +100,13 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 }
 
 func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) error {
+	if (URL == "" || token == "") { 
+		return fmt.Errorf("git URL and token are required")
+	}
+	if len(m.conf.GitRepos) == 0 { 
+		fmt.Printf("no git repos to process\n")
+		return nil
+	}
 	git, err := git.NewClient(URL, token, issuePattern, customPattern)
 	if err != nil {
 		return err
@@ -199,6 +206,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 		if err != nil {
 			return err
 		}
+			
 		m.addKnownIssues(repo.Label, knownIssues, issuesTracker.Type())
 	}
 

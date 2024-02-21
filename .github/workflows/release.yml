@@ -1,26 +1,41 @@
-name: Docker Image Publish
+name: Build and Release
 on:
   push:
-    tags: 
+    tags:
       - '*'
-  pull_request:
 env:
-  IMAGE_NAME: jig
+  APP_NAME: jig
 jobs:
-  push:
+  build:
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
-      - name: Log in to registry
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build -ldflags "-X main.version=${GITHUB_REF#refs/tags/}"
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Build Docker Image
+        run: docker build . --file Dockerfile --tag $APP_NAME --label "runnumber=${GITHUB_RUN_ID}"
+      - name: Log in to Docker Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-      - name: Push image
+      - name: Push Docker Image
         run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$APP_NAME
           # This changes all uppercase characters to lowercase.
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           # This strips the git ref prefix from the version.
@@ -31,5 +46,5 @@ jobs:
           [ "$VERSION" == "main" ] && VERSION=latest
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
-          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker tag $APP_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION

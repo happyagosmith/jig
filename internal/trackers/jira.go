@@ -70,10 +70,6 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	if len(gds) == 0 {
 		return []model.ExtractedIssue{}, nil
 	}
-	opt := &jira.SearchOptions{
-		MaxResults: 1000,
-		StartAt:    0,
-	}
 
 	keys := []string{}
 	breakingChange := map[string]bool{}
@@ -86,7 +82,19 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 		breakingChange[gc.IssueKey] = gc.IsBreaking
 	}
 
+	if len(keys) == 0 {
+		return []model.ExtractedIssue{}, nil
+	}
+
 	jql := fmt.Sprintf("issue in (%s)", strings.Join(keys, ","))
+	if len(keys) == 1 {
+		jql = fmt.Sprintf("issue = %s", keys[0])
+	}
+	opt := &jira.SearchOptions{
+		MaxResults: 1000,
+		StartAt:    0,
+	}
+	fmt.Printf("\nRetrieving issues using Jira jql \"%s\"\n", jql)
 	jissues, _, err := j.client.Issue.Search(jql, opt)
 	if err != nil {
 		return nil, err
@@ -116,6 +124,7 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	}
 
 	jql = fmt.Sprintf("issue in (%s)", strings.Join(subTaskParents, ","))
+	fmt.Printf("\nRetrieving subtask parents using Jira jql \"%s\"\n", jql)
 	pIssues, _, err := j.client.Issue.Search(jql, opt)
 	if err != nil {
 		return nil, err

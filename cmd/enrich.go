@@ -18,18 +18,26 @@ func addJiraOpt(label string, value string, opts *[]trackers.JiraOpt, opt func(s
 	fmt.Printf("Using %s -> %s\n", label, value)
 	filters := strings.Split(value, ",")
 	if len(filters) == 0 {
-    CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
+		CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
 	}
 	for _, cff := range filters {
-    f := strings.Split(cff, ":")
-    if len(f) != 2 {
-    	CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
-    }
-    *opts = append(*opts, opt(f[0], f[1]))
+		f := strings.Split(cff, ":")
+		if len(f) != 2 {
+			CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
+		}
+		*opts = append(*opts, opt(f[0], f[1]))
 	}
 }
 
-func EnrichModel(b []byte) []byte {
+func ConfigureJira() trackers.Jira {
+	jiraURL := viper.GetString("jiraURL")
+	jiraUsername := viper.GetString("jiraUsername")
+	jiraPassword := viper.GetString("jiraPassword")
+
+	if jiraURL == "" || jiraUsername == "" || jiraPassword == "" {
+		CheckErr(fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required"))
+	}
+
 	var opts []trackers.JiraOpt
 	fmt.Printf("Using %s -> %s\n", "issuePattern in GIT commit messages", viper.GetString("issuePattern"))
 	addJiraOpt("jiraClosedFeatureFilter", viper.GetString("jiraClosedFeatureFilter"), &opts, trackers.WithClosedFeatureFilter)
@@ -37,21 +45,35 @@ func EnrichModel(b []byte) []byte {
 
 	opts = append(opts, trackers.WithKnownIssueJql(viper.GetString("jiraKnownIssuesJQL")))
 	jiraTracker, err := trackers.NewJira(
-    viper.GetString("jiraURL"),
-    viper.GetString("jiraUsername"),
-    viper.GetString("jiraPassword"),
-    opts...,
+		viper.GetString("jiraURL"),
+		viper.GetString("jiraUsername"),
+		viper.GetString("jiraPassword"),
+		opts...,
 	)
 	CheckErr(err)
 
+	return jiraTracker
+}
+
+func EnrichModel(b []byte) []byte {
+	jiraTracker := ConfigureJira()
 	model, err := model.New(b, model.WithIssueTracker(jiraTracker))
 	CheckErr(err)
 
+	gitURL := viper.GetString("gitURL")
+	gitToken := viper.GetString("gitToken")
+
+	if gitURL == "" || gitToken == "" {
+		CheckErr(fmt.Errorf("gitURL and gitToken are required"))
+	}
+	fmt.Printf("Using %s -> %s\n", "gitURL", gitURL)
+	fmt.Printf("Using %s -> %s\n", "gitToken", gitToken)
+
 	err = model.EnrichWithGit(
-    viper.GetString("gitURL"),
-    viper.GetString("gitToken"),
-    viper.GetString("issuePattern"),
-    viper.GetString("customCommitPattern"))
+		gitURL,
+		gitToken,
+		viper.GetString("issuePattern"),
+		viper.GetString("customCommitPattern"))
 	CheckErr(err)
 
 	err = model.EnrichWithIssueTrackers()
@@ -65,9 +87,9 @@ func EnrichModel(b []byte) []byte {
 
 func newEnrichCmd() *cobra.Command {
 	enrichCmd := &cobra.Command{
-    Use:   "enrich [model.yaml]",
-    Short: "Enrich the model.yaml file with the generated values extracted from Git and Jira.",
-    Long: `Enrich the model.yaml file with the generated values extracted from Git and Jira.
+		Use:   "enrich [model.yaml]",
+		Short: "Enrich the model.yaml file with the generated values extracted from Git and Jira.",
+		Long: `Enrich the model.yaml file with the generated values extracted from Git and Jira.
 
 The model.yaml file should include the list "gitRepo" with an element for each repo 
 to be processed. Following an example:	
@@ -161,20 +183,20 @@ generatedValues:
     	  issueTrackerType: JIRA
     	  isbreakingchange: false
 `,
-    Args: func(cmd *cobra.Command, args []string) error {
-    	return cobra.ExactArgs(1)(cmd, args)
-    },
-    RunE: func(cmd *cobra.Command, args []string) error {
-    	v, err := os.ReadFile(args[0])
-    	CheckErr(err)
+		Args: func(cmd *cobra.Command, args []string) error {
+			return cobra.ExactArgs(1)(cmd, args)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v, err := os.ReadFile(args[0])
+			CheckErr(err)
 
-    	b := EnrichModel(v)
-    	err = os.WriteFile(args[0], b, 0644)
-    	CheckErr(err)
+			b := EnrichModel(v)
+			err = os.WriteFile(args[0], b, 0644)
+			CheckErr(err)
 
-    	return nil
-    },
+			return nil
+		},
 	}
-	
+
 	return enrichCmd
 }

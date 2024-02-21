@@ -13,8 +13,8 @@ type ITParser struct {
 type IssueTrackerType int
 
 const (
-	JIRA IssueTrackerType = iota
-	NONE
+	NONE IssueTrackerType = iota
+	JIRA
 )
 
 func (i IssueTrackerType) String() string {

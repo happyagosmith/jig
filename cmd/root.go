@@ -46,9 +46,17 @@ func CheckErr(e error) {
 	}
 }
 
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+func Execute(version string) {
+	rootCmd.Flags().BoolP("version", "v", false, "version for myapp")
+	rootCmd.Run = func(cmd *cobra.Command, args []string) {
+		if v, _ := cmd.Flags().GetBool("version"); v {
+			fmt.Println("jig version " + version)
+			return
+		}
+
+		rootCmd.Help()
+	}
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

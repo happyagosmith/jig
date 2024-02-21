@@ -69,7 +69,8 @@ func TestJiraGetKnownIssues(t *testing.T) {
 }
 
 func TestJira(t *testing.T) {
-	t.Run("test jira GetIssues", func(t *testing.T) {
+
+	t.Run("test jira GetIssues with no commits", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			b, _ := os.ReadFile("data/jira-issues.json")
@@ -86,6 +87,27 @@ func TestJira(t *testing.T) {
 		assert.NoError(t, err, "NewJira error must be nil")
 
 		i, err := jira.GetIssues([]git.CommitDetail{{IssueKey: "test"}})
+		assert.NoError(t, err, "GetIssues error must be nil")
+
+		assert.True(t, len(i) == 0)
+	})
+	t.Run("test jira GetIssues", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			b, _ := os.ReadFile("data/jira-issues.json")
+			w.Write(b)
+		}))
+		defer srv.Close()
+
+		jira, err := trackers.NewJira(srv.URL, "jiraUsername", "jiraPassword",
+			trackers.WithClosedFeatureFilter("STORY", "GOLIVE"),
+			trackers.WithClosedFeatureFilter("TECH TASK", "Completata"),
+			trackers.WithFixedBugFilter("BUG", "FIXED"),
+			trackers.WithFixedBugFilter("BUG", "RELEASED"),
+		)
+		assert.NoError(t, err, "NewJira error must be nil")
+
+		i, err := jira.GetIssues([]git.CommitDetail{{IssueKey: "test", IssueTracker: parsers.JIRA}})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, i[0].Category == model.CLOSED_FEATURE)
@@ -128,7 +150,7 @@ func TestJira(t *testing.T) {
 		jira, err := trackers.NewJira(srv.URL, "jiraUsername", "jiraPassword")
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		_, err = jira.GetIssues([]git.CommitDetail{{IssueKey: "test"}})
+		_, err = jira.GetIssues([]git.CommitDetail{{IssueKey: "test", IssueTracker: parsers.JIRA}})
 		assert.NotNil(t, err, "GetIssues should return error")
 	})
 
