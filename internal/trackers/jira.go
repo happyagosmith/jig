@@ -87,9 +87,6 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	}
 
 	jql := fmt.Sprintf("issue in (%s)", strings.Join(keys, ","))
-	if len(keys) == 1 {
-		jql = fmt.Sprintf("issue = %s", keys[0])
-	}
 	opt := &jira.SearchOptions{
 		MaxResults: 1000,
 		StartAt:    0,

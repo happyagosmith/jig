@@ -187,11 +187,16 @@ generatedValues:
 			return cobra.ExactArgs(1)(cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			v, err := os.ReadFile(args[0])
+			modelPath := args[0]
+			cmd.Printf("Using model file: %s\n", modelPath)
+			if _, err := os.Stat(modelPath); os.IsNotExist(err) {
+				CheckErr(err)
+			}
+			v, err := os.ReadFile(modelPath)
 			CheckErr(err)
 
 			b := EnrichModel(v)
-			err = os.WriteFile(args[0], b, 0644)
+			err = os.WriteFile(modelPath, b, 0644)
 			CheckErr(err)
 
 			return nil
