@@ -43,7 +43,7 @@ func ConfigureJira() trackers.Jira {
 	addJiraOpt("jiraFixedBugFilter", viper.GetString("jiraFixedBugFilter"), &opts, trackers.WithFixedBugFilter)
 	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", viper.GetString("jiraKnownIssuesJQL"))
 	fmt.Printf("using %s -> %s\n", "jiraURL", viper.GetString("jiraURL"))
-	
+
 	opts = append(opts, trackers.WithKnownIssueJql(viper.GetString("jiraKnownIssuesJQL")))
 	jiraTracker, err := trackers.NewJira(
 		viper.GetString("jiraURL"),
@@ -65,7 +65,7 @@ func EnrichModel(b []byte) []byte {
 	gitToken := viper.GetString("gitToken")
 	issuePattern := viper.GetString("issuePattern")
 	customCommitPattern := viper.GetString("customCommitPattern")
-
+	withCCWithoutScope := viper.GetBool("withCCWithoutScope")
 
 	if gitURL == "" || gitToken == "" {
 		CheckErr(fmt.Errorf("gitURL and gitToken are required"))
@@ -73,12 +73,14 @@ func EnrichModel(b []byte) []byte {
 	fmt.Printf("using %s -> %s\n", "gitURL", gitURL)
 	fmt.Printf("using %s -> %s\n", "issuePattern", issuePattern)
 	fmt.Printf("using %s -> %s\n", "customCommitPattern", customCommitPattern)
-	
+	fmt.Printf("using %s -> %v\n", "withCCWithoutScope", withCCWithoutScope)
+
 	err = model.EnrichWithGit(
 		gitURL,
 		gitToken,
 		issuePattern,
-		customCommitPattern)
+		customCommitPattern,
+		withCCWithoutScope)
 	CheckErr(err)
 
 	err = model.EnrichWithIssueTrackers()

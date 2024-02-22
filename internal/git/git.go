@@ -26,17 +26,44 @@ type Git struct {
 	c                  *gitlab.Client
 	conventionalParser parsers.CCParser
 	itParser           parsers.ITParser
-	customParser       parsers.CustomParser
+	customParser       *parsers.CustomParser
+	keepCCWithoutScope bool
 }
 
-func NewClient(URL, token, issuePattern, customPattern string) (Git, error) {
+type GitOpt func(*Git)
+
+func WithKeepCCWithoutScope(v bool) GitOpt {
+	return func(j *Git) {
+		j.keepCCWithoutScope = v
+	}
+}
+
+func WithCustomPattern(v string) GitOpt {
+	return func(j *Git) {
+		if v != "" {
+			c := parsers.NewCustom(parsers.WithPattern(v))
+			j.customParser = &c
+		}
+	}
+}
+
+func NewClient(URL, token, issuePattern string, opts ...GitOpt) (Git, error) {
 	c, err := gitlab.NewClient(token,
 		gitlab.WithBaseURL(fmt.Sprintf("%s/api/v4/", URL)))
 	if err != nil {
 		log.Fatalf("failed to create client: %v", err)
 	}
 
-	return Git{c: c, conventionalParser: parsers.NewCC(), itParser: parsers.NewIT(issuePattern), customParser: parsers.NewCustom(parsers.WithPattern(customPattern))}, nil
+	g := Git{
+		c:                  c,
+		conventionalParser: parsers.NewCC(),
+		itParser:           parsers.NewIT(issuePattern),
+	}
+	for _, o := range opts {
+		o(&g)
+	}
+
+	return g, nil
 }
 
 func (g Git) ExtractCommits(id, from, to string) ([]CommitDetail, error) {
@@ -54,10 +81,10 @@ func (g Git) ExtractCommits(id, from, to string) ([]CommitDetail, error) {
 		fmt.Printf("processing commit %s \n", commit.ShortID)
 		cd := CommitDetail{IssueTracker: parsers.NONE}
 		cc := g.conventionalParser.Parse(commit.Message)
-		if cc == nil {
+		if cc == nil && g.customParser != nil {
 			cc = g.customParser.Parse(commit.Message)
 		}
-		if cc != nil && cc.Scope != "" {
+		if cc != nil && (cc.Scope != "" || (g.keepCCWithoutScope && cc.Type != parsers.UNKNOWN && cc.Subject != "")) {
 			cd.IssueKey = cc.Scope
 			cd.Category = cc.Type
 			cd.Summary = cc.Subject
@@ -68,6 +95,11 @@ func (g Git) ExtractCommits(id, from, to string) ([]CommitDetail, error) {
 			if issueDetails != nil && issueDetails.Key != "" {
 				cd.IssueKey = issueDetails.Key
 				cd.IssueTracker = issueDetails.IssueTracker
+			}
+			if cd.IssueKey == "" {
+				cds = append(cds, cd)
+				fmt.Printf("added conventional commit without issueKey \"%s\" \n", cd.Message)
+				continue
 			}
 			if !found[cd.IssueKey] {
 				found[cd.IssueKey] = true

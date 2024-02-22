@@ -68,6 +68,9 @@ func init() {
 	rootCmd.PersistentFlags().String("issuePattern", `(^j_(?P<jira_1>.*)$)|(?P<jira_2>^[^\_]+$)`, "Pattern to apply on the git commit message to extract the issue keys from the message. The pattern should include the named groups composed by noun with number (e.g. jira_1). The noun refers to the issue tracker (at the moment only jira is supported). The number has the purpose to define more than one pattern for the same issue tracker (this is usefull if the commit message format is changed over the time). The pattern must be a valid regex pattern.")
 	viper.BindPFlag("issuePattern", rootCmd.PersistentFlags().Lookup("issuePattern"))
 
+	rootCmd.PersistentFlags().Bool("withCCWithoutScope", false, "if true, extract conventional commit without scope")
+	viper.BindPFlag("withCCWithoutScope", rootCmd.PersistentFlags().Lookup("withCCWithoutScope"))
+
 	rootCmd.PersistentFlags().String("customCommitPattern", `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the git commit message to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
 	viper.BindPFlag("customCommitPattern", rootCmd.PersistentFlags().Lookup("customCommitPattern"))
 

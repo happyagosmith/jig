@@ -99,7 +99,7 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 	return &m, nil
 }
 
-func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) error {
+func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string, keepCCWithoutScope bool) error {
 	if URL == "" || token == "" {
 		return fmt.Errorf("git URL and token are required")
 	}
@@ -107,7 +107,7 @@ func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) er
 		fmt.Printf("no git repos to process\n")
 		return nil
 	}
-	git, err := git.NewClient(URL, token, issuePattern, customPattern)
+	git, err := git.NewClient(URL, token, issuePattern, git.WithCustomPattern(customPattern), git.WithKeepCCWithoutScope(keepCCWithoutScope))
 	if err != nil {
 		return err
 	}

@@ -20,7 +20,7 @@ func TestGit(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		gc, err := git.NewClient(srv.URL, "token", `(?P<jira_1>[^\]]*)`, "")
+		gc, err := git.NewClient(srv.URL, "token", `(?P<jira_1>[^\]]*)`, git.WithCustomPattern(`\[(?P<scope>[^\]]*)\](?P<subject>.*)`))
 		assert.NoError(t, err, "NewGit error must be nil")
 
 		i, err := gc.ExtractCommits("", "from", "to")
@@ -47,7 +47,7 @@ func TestGit(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`, "")
+		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`)
 		assert.NoError(t, err, "NewGit error must be nil")
 
 		i, err := gc.ExtractCommits("", "from", "to")
@@ -68,7 +68,7 @@ func TestGit(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`, "")
+		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`)
 		assert.NoError(t, err, "NewGit error must be nil")
 
 		i, err := gc.ExtractCommits("", "from", "to")
@@ -89,7 +89,7 @@ func TestGit(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`, "")
+		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`)
 		assert.NoError(t, err, "NewGit error must be nil")
 
 		i, err := gc.ExtractCommits("", "from", "to")
@@ -106,7 +106,7 @@ func TestGit(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`, "")
+		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`)
 		assert.NoError(t, err, "NewGit error must be nil")
 
 		i, err := gc.ExtractCommits("", "from", "to")
@@ -119,13 +119,51 @@ func TestGit(t *testing.T) {
 		assert.Equal(t, "this has an unknown issue tracker", i[3].Summary)
 	})
 
+	t.Run("add feature without issuekey from conventional commit", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			w.Write(b)
+		}))
+		defer srv.Close()
+
+		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`, git.WithKeepCCWithoutScope(true))
+		assert.NoError(t, err, "NewGit error must be nil")
+
+		i, err := gc.ExtractCommits("", "from", "to")
+		assert.NoError(t, err, "ParseCommits error must be nil")
+
+		assert.Equal(t, "", i[4].IssueKey)
+		assert.Equal(t, parsers.NONE, i[4].IssueTracker)
+		assert.Equal(t, false, i[4].IsBreaking)
+		assert.Equal(t, parsers.BUG_FIX, i[4].Category)
+		assert.Equal(t, "this has an unknown issue tracker and no issueKey", i[4].Summary)
+	})
+
+	t.Run("not add feature without issuekey from conventional commit", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			w.Write(b)
+		}))
+		defer srv.Close()
+
+		gc, err := git.NewClient(srv.URL, "token", `j_(?P<jira_1>.*)`)
+		assert.NoError(t, err, "NewGit error must be nil")
+
+		i, err := gc.ExtractCommits("", "from", "to")
+		assert.NoError(t, err, "ParseCommits error must be nil")
+
+		assert.Equal(t, 4, len(i))
+	})
+
 	t.Run("test api error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(404)
 		}))
 		defer srv.Close()
 
-		git, err := git.NewClient(srv.URL, "token", `\[([^\]]*)\]`, "")
+		git, err := git.NewClient(srv.URL, "token", `\[([^\]]*)\]`)
 		assert.NoError(t, err, "NewGit error must be nil")
 
 		_, err = git.ExtractCommits("", "from", "to")

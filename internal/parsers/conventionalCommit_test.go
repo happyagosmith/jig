@@ -8,6 +8,15 @@ import (
 )
 
 func TestConventionalCommit(t *testing.T) {
+	t.Run("parse FEATURE without scope", func(t *testing.T) {
+		parser := parsers.NewCC()
+		cc := parser.Parse("feat: send an email to the customer when a product is shipped")
+
+		assert.Equal(t, parsers.FEATURE, cc.Type)
+		assert.Equal(t, "", cc.Scope)
+		assert.Equal(t, "send an email to the customer when a product is shipped", cc.Subject)
+	})
+
 	t.Run("parse FEATURE type", func(t *testing.T) {
 		parser := parsers.NewCC()
 		cc := parser.Parse("feat(j_AAA-123)!: send an email to the customer when a product is shipped")

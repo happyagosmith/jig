@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const customPattern = `\[(?P<scope>[^\]]*)\](?P<subject>.*)`
-
 type CustomParser struct {
 	re      regexp.Regexp
 	gni     map[string]int
@@ -25,7 +23,6 @@ func WithPattern(pattern string) ParserOpt {
 
 func NewCustom(opts ...ParserOpt) CustomParser {
 	p := CustomParser{}
-	p.pattern = customPattern
 	for _, o := range opts {
 		o(&p)
 	}
@@ -46,6 +43,9 @@ func NewCustom(opts ...ParserOpt) CustomParser {
 }
 
 func (p CustomParser) Parse(commit string) *ConventionalCommit {
+	if p.pattern == "" {
+		return nil
+	}
 	cc := p.re.FindAllStringSubmatch(commit, -1)
 
 	if len(cc) == 0 {

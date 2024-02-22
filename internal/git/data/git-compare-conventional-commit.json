@@ -27,6 +27,11 @@
          "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
          "short_id":"82e1dd34",
          "message":"fix(CC-222): this has an unknown issue tracker"
+      },
+      {
+         "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+         "short_id":"82e1dd34",
+         "message":"fix: this has an unknown issue tracker and no issueKey"
       }
 
     ],

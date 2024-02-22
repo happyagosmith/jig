@@ -8,7 +8,7 @@ import (
 )
 
 func TestCustomParser_Parse(t *testing.T) {
-	parser := parsers.NewCustom()
+	parser := parsers.NewCustom(parsers.WithPattern(`\[(?P<scope>[^\]]*)\](?P<subject>.*)`))
 
 	tests := []struct {
 		name   string
