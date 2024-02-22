@@ -100,10 +100,10 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 }
 
 func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) error {
-	if (URL == "" || token == "") { 
+	if URL == "" || token == "" {
 		return fmt.Errorf("git URL and token are required")
 	}
-	if len(m.conf.GitRepos) == 0 { 
+	if len(m.conf.GitRepos) == 0 {
 		fmt.Printf("no git repos to process\n")
 		return nil
 	}
@@ -197,8 +197,8 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 		repo.HasNewFeature = repo.HasNewFeature || hasNewFeature
 		repo.HasBugFixed = repo.HasBugFixed || hasBugFixed
 
-		if repo.Project == "" || repo.Component == "" {
-			fmt.Printf("\nknown issues not retrieved. project or component not set for the repo \"%s\"\n", repo.Label)
+		if repo.Project == "" {
+			fmt.Printf("\nknown issues not retrieved. project not set for the repo \"%s\"\n", repo.Label)
 			continue
 		}
 
@@ -206,7 +206,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 		if err != nil {
 			return err
 		}
-			
+
 		m.addKnownIssues(repo.Label, knownIssues, issuesTracker.Type())
 	}
 
