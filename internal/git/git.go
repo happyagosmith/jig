@@ -14,6 +14,7 @@ type CommitDetail struct {
 	IsBreaking   bool                     `yaml:"isBreakingChange,omitempty"`
 	Summary      string                   `yaml:"summary,omitempty"`
 	Message      string                   `yaml:"message,omitempty"`
+	Commit       string                   `yaml:"commit,omitempty"`
 	IssueTracker parsers.IssueTrackerType `yaml:"issueTrackerType"`
 }
 
@@ -32,7 +33,7 @@ func NewClient(URL, token, issuePattern, customPattern string) (Git, error) {
 	c, err := gitlab.NewClient(token,
 		gitlab.WithBaseURL(fmt.Sprintf("%s/api/v4/", URL)))
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		log.Fatalf("failed to create client: %v", err)
 	}
 
 	return Git{c: c, conventionalParser: parsers.NewCC(), itParser: parsers.NewIT(issuePattern), customParser: parsers.NewCustom(parsers.WithPattern(customPattern))}, nil
@@ -61,6 +62,7 @@ func (g Git) ExtractCommits(id, from, to string) ([]CommitDetail, error) {
 			cd.Category = cc.Type
 			cd.Summary = cc.Subject
 			cd.Message = commit.Message
+			cd.Commit = commit.ID
 			cd.IsBreaking = cc.IsBreaking
 			issueDetails := g.itParser.Parse(cc.Scope)
 			if issueDetails != nil && issueDetails.Key != "" {
@@ -70,7 +72,7 @@ func (g Git) ExtractCommits(id, from, to string) ([]CommitDetail, error) {
 			if !found[cd.IssueKey] {
 				found[cd.IssueKey] = true
 				cds = append(cds, cd)
-				fmt.Printf("added key %s \n", cd.IssueKey)
+				fmt.Printf("extracted key %s \n", cd.IssueKey)
 			}
 		}
 	}

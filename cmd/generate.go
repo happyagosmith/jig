@@ -16,8 +16,8 @@ import (
 func newGenerateCmd() *cobra.Command {
 	generateCmd := &cobra.Command{
 		Use:   "generate [template] -m [model.yaml]",
-		Short: "Render the template using the values of the model.yaml file",
-		Long: `Render the template using the values of the model.yaml file
+		Short: "render the template using the values of the model.yaml file",
+		Long: `render the template using the values of the model.yaml file
 		
 In case --withEnrich is used, before rendering the template, jig executes the enrichment of the model in memory with
 the data extracted from Git and Jira. Refer to the help of the enrich subcommand for details.`,
@@ -27,12 +27,12 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := viper.GetString("model")
 			tplPath := args[0]
-			cmd.Printf("Using model file: %s\n", modelPath)
+			cmd.Printf("using model file: %s\n", modelPath)
 			if _, err := os.Stat(modelPath); os.IsNotExist(err) {
 				CheckErr(err)
 			}
 
-			cmd.Printf("Using template file: %s\n", tplPath)
+			cmd.Printf("using template file: %s\n", tplPath)
 			if _, err := os.Stat(tplPath); os.IsNotExist(err) {
 				CheckErr(err)
 			}
@@ -44,20 +44,23 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 				v = EnrichModel(v)
 			}
 
+			output := os.Stdout
 			outputPath := viper.GetString("output")
-			output, err := os.Create(outputPath)
-			if err != nil {
-				fmt.Fprint(os.Stderr, err)
-				output = os.Stdout
+			if outputPath != "" {
+				output, err = os.Create(outputPath)
+				if err != nil {
+					fmt.Fprint(os.Stderr, err)
+				}
+				defer output.Close()
 			}
-			defer output.Close()
 
 			err = releaseNote.Generate(tplPath, v, output)
 			CheckErr(err)
-			if (outputPath != "") {
-				fmt.Printf("\nRelease notes generated successfully at %s\n", outputPath)
+			if outputPath != "" {
+				fmt.Printf("\nrelease notes generated successfully at %s\n", outputPath)
+				return nil
 			}
-			fmt.Println("\nRelease notes generated successfully\n")
+			fmt.Print("\nrelease notes generated successfully\n")
 
 			return nil
 		},

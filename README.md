@@ -210,7 +210,7 @@ cat rn.md | sed -n '/\#/,$p'
 
 <!-- DOCKER -->
 
-## Building from Source
+## go install
 
 First, ensure that you have a compatible version of [Go](https://go.dev/) installed and set up on your system. The minimum required version of Go can be found in the [go.mod](go.mod) file.
 
@@ -229,21 +229,9 @@ The simplest way to run Jig (assuming the configuration file and the model file 
 jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 
 ```
 
-You might find it useful to redirect the standard output to a file:
+You might find it useful to save the release note into a file:
 ```shell
-jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 2>&1 | tee rn.md
-```
-
-Then, you can use the cat command to extract the lines related to the Release Note:
-
-```shell
-cat rn.md | sed -n '/\#/,$p'
-```
-
-Or, you can directly output only the Release Note content:
-
-```shell
-jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 2>&1 | sed -n '/\#/,$p'
+jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich -o rn.md
 ```
 
 You also have the option to enrich the model.yaml file first without generating the Release Note, and then generate the Release Note at a later time:

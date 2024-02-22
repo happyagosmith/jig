@@ -15,7 +15,7 @@ import (
 )
 
 func addJiraOpt(label string, value string, opts *[]trackers.JiraOpt, opt func(string, string) trackers.JiraOpt) {
-	fmt.Printf("Using %s -> %s\n", label, value)
+	fmt.Printf("using %s -> %s\n", label, value)
 	filters := strings.Split(value, ",")
 	if len(filters) == 0 {
 		CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
@@ -39,10 +39,11 @@ func ConfigureJira() trackers.Jira {
 	}
 
 	var opts []trackers.JiraOpt
-	fmt.Printf("Using %s -> %s\n", "issuePattern in GIT commit messages", viper.GetString("issuePattern"))
 	addJiraOpt("jiraClosedFeatureFilter", viper.GetString("jiraClosedFeatureFilter"), &opts, trackers.WithClosedFeatureFilter)
 	addJiraOpt("jiraFixedBugFilter", viper.GetString("jiraFixedBugFilter"), &opts, trackers.WithFixedBugFilter)
-
+	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", viper.GetString("jiraKnownIssuesJQL"))
+	fmt.Printf("using %s -> %s\n", "jiraURL", viper.GetString("jiraURL"))
+	
 	opts = append(opts, trackers.WithKnownIssueJql(viper.GetString("jiraKnownIssuesJQL")))
 	jiraTracker, err := trackers.NewJira(
 		viper.GetString("jiraURL"),
@@ -62,18 +63,22 @@ func EnrichModel(b []byte) []byte {
 
 	gitURL := viper.GetString("gitURL")
 	gitToken := viper.GetString("gitToken")
+	issuePattern := viper.GetString("issuePattern")
+	customCommitPattern := viper.GetString("customCommitPattern")
+
 
 	if gitURL == "" || gitToken == "" {
 		CheckErr(fmt.Errorf("gitURL and gitToken are required"))
 	}
-	fmt.Printf("Using %s -> %s\n", "gitURL", gitURL)
-	fmt.Printf("Using %s -> %s\n", "gitToken", gitToken)
-
+	fmt.Printf("using %s -> %s\n", "gitURL", gitURL)
+	fmt.Printf("using %s -> %s\n", "issuePattern", issuePattern)
+	fmt.Printf("using %s -> %s\n", "customCommitPattern", customCommitPattern)
+	
 	err = model.EnrichWithGit(
 		gitURL,
 		gitToken,
-		viper.GetString("issuePattern"),
-		viper.GetString("customCommitPattern"))
+		issuePattern,
+		customCommitPattern)
 	CheckErr(err)
 
 	err = model.EnrichWithIssueTrackers()
@@ -188,7 +193,7 @@ generatedValues:
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := args[0]
-			cmd.Printf("Using model file: %s\n", modelPath)
+			cmd.Printf("using model file: %s\n", modelPath)
 			if _, err := os.Stat(modelPath); os.IsNotExist(err) {
 				CheckErr(err)
 			}

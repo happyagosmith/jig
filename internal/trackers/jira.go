@@ -91,7 +91,7 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 		MaxResults: 1000,
 		StartAt:    0,
 	}
-	fmt.Printf("\nRetrieving issues using Jira jql \"%s\"\n", jql)
+	fmt.Printf("retrieving issues info using JQL \"%s\"\n", jql)
 	jissues, _, err := j.client.Issue.Search(jql, opt)
 	if err != nil {
 		return nil, err
@@ -103,6 +103,7 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	for _, issue := range jissues {
 		parent := issue.Fields.Parent
 		if issue.Fields.Type.Subtask && parent != nil && parent.Key != "" {
+			fmt.Printf("issue %s is a subtask. add parent key %s instead\n", issue.Key, parent.Key)
 			subTaskParents = append(subTaskParents, parent.Key)
 			breakingChange[parent.Key] = breakingChange[issue.Key]
 			continue
@@ -121,7 +122,7 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	}
 
 	jql = fmt.Sprintf("issue in (%s)", strings.Join(subTaskParents, ","))
-	fmt.Printf("\nRetrieving subtask parents using Jira jql \"%s\"\n", jql)
+	fmt.Printf("retrieving issue parents info using JQL \"%s\"\n", jql)
 	pIssues, _, err := j.client.Issue.Search(jql, opt)
 	if err != nil {
 		return nil, err
@@ -183,7 +184,7 @@ func (j Jira) GetKnownIssues(project, component string) ([]model.ExtractedIssue,
 	}
 
 	jql := strings.Join(jqls, " and ")
-	fmt.Printf("\nRetrieving known issues using Jira jql \"%s\"\n", jql)
+	fmt.Printf("\nretrieving known issues using Jira jql \"%s\"\n", jql)
 	jIssues, _, err := j.client.Issue.Search(jql, opt)
 	if err != nil {
 		return nil, err

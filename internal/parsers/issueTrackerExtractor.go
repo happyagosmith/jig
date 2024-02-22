@@ -18,7 +18,7 @@ const (
 )
 
 func (i IssueTrackerType) String() string {
-	return []string{"JIRA", "NONE"}[i]
+	return []string{"NONE", "JIRA"}[i]
 }
 
 func (i IssueTrackerType) MarshalYAML() (interface{}, error) {

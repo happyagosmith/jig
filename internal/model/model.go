@@ -134,7 +134,7 @@ func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string) er
 			tc = repo.ToCommit
 		}
 
-		fmt.Printf("\nprocessing repo %s from %s to %s\n", repo.Label, fc, tc)
+		fmt.Printf("\nprocessing repo \"%s\" from \"%s\" to \"%s\"\n", repo.Label, fc, tc)
 
 		cds, err := git.ExtractCommits(repo.ID, fc, tc)
 		if err != nil {
@@ -179,7 +179,7 @@ func (m *Model) EnrichWithIssueTrackers() error {
 		}
 
 		sv, _ := computeSemanticVersion(repo.FromTag, repo.HasBreaking, repo.HasNewFeature, repo.HasBugFixed)
-		fmt.Printf("current version for the repo %s is: %s, suggested version %s", repo.Label, repo.FromTag, sv)
+		fmt.Printf("\ncurrent version for the repo \"%s\" is: %s, suggested version \"%s\" instead\n", repo.Label, repo.FromTag, sv)
 	}
 
 	return nil
@@ -187,7 +187,7 @@ func (m *Model) EnrichWithIssueTrackers() error {
 
 func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 	for _, issuesTracker := range m.issueTrackers {
-		fmt.Printf("\nExtracting issues from the Issues Tracker %s for the Repo %s\n", issuesTracker.Type(), repo.Label)
+		fmt.Printf("\nretrieving issues info from the issues tracker \"%s\" for the repo \"%s\"\n", issuesTracker.Type(), repo.Label)
 		issues, err := issuesTracker.GetIssues(repo.CommitDetails)
 		if err != nil {
 			return err
@@ -198,7 +198,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 		repo.HasBugFixed = repo.HasBugFixed || hasBugFixed
 
 		if repo.Project == "" || repo.Component == "" {
-			fmt.Printf("\nKnown issues not retrieved. Project or Component not set for the repo %s\n", repo.Label)
+			fmt.Printf("\nknown issues not retrieved. project or component not set for the repo \"%s\"\n", repo.Label)
 			continue
 		}
 
