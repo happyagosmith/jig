@@ -1,18 +1,18 @@
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-</div>
-
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
     <li>
       <a href="#about-the-project">About The Project</a>
+    </li>
+    <li>
+      <a href="#how-jig-works">How Jig Works</a>
+    </li>
+    <li>
+      <a href="#using-custom-and-sprig functions-in-go-text-templates">Using Custom and Sprig Functions in Go Text Templates</a>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
@@ -46,6 +46,7 @@ This project is built with:
 
 * [![Cobra][Cobra]][Cobra-url]
 * [![go-template][go-template]][go-template-url]
+* [![go-sprig][go-sprig]][go-sprig-url]
 
 and we're always open to contributions and suggestions for improvement.
 
@@ -180,6 +181,45 @@ For more details on how to use Jig, including how to use the `extractedKeys` fea
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Using Custom and Sprig Functions in Go Text Templates
+
+In addition to the standard functions provided by Go's text/template package, our library also includes a set of custom functions and all functions provided by the Sprig library.
+
+### Custom Functions
+
+#### issuesFlatList
+The issuesFlatList function is a custom function that takes an ExtractedIssue map as an argument and returns a slice of unique ExtractedIssue items.
+
+##### Function Signature
+```go
+func(issuesMap ExtractedIssue) []ExtractedIssue
+```
+##### Usage
+
+In your Go text template, you can use the issuesFlatList function like this:
+
+```go
+{{issuesFlatList .generatedValues.features}}
+```
+
+##### How It Works
+The issuesFlatList function works by iterating over the ExtractedIssue map and creating a unique list of issues. It extracts the issue key from each issue and checks if it's already in the list of unique issues. If it's not, it adds the issue to the list. If it is, it updates the existing issue in the list. Additionally, for each unique issue, **it adds a key impactedServices** that contains a list of services that have had an impact.
+
+#### Sprig Functions
+Our library also includes all functions provided by the Sprig library. Sprig is a library that provides more than 100 commonly used template functions. It's inspired by the "Spring" Java library and the "Twig" PHP template engine.
+
+You can use Sprig functions in your Go text templates just like you would use any other function. For a full list of available Sprig functions and their descriptions, please refer to the [Sprig documentation](https://masterminds.github.io/sprig/).
+
+In your Go text template, you can utilize the issuesFlatList function in conjunction with the join function from Sprig. Here's an example of how you can do this:
+
+```go
+{{range (issuesFlatList .generatedValues.features)}} {{ .issueKey}}: {{ .impactedService | join ","}}{{end}}
+```
+
+In this example, the issuesFlatList function is used to iterate over the unique issues from .generatedValues.features. For each issue, it prints the issue key and the impacted services, with the services joined by a comma.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Getting Started
 
 ## Docker Usage
@@ -280,3 +320,5 @@ Distributed under the Apache Version 2.0 License. See `LICENSE.txt` for more inf
 [go-template-url]: https://pkg.go.dev/text/template
 [cobra]: https://img.shields.io/static/v1?label=cobra&message=v1.7.0&color=blue
 [cobra-url]: https://github.com/spf13/cobra
+[go-sprig]: https://img.shields.io/static/v1?label=sprig&message=latest&color=blue
+[go-sprig-url]: https://masterminds.github.io/sprig/
