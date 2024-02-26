@@ -16,12 +16,22 @@ func Generate(tplPath string, values []byte, output io.Writer) error {
 	if output == nil {
 		return fmt.Errorf("please provide an output file")
 	}
-	var model map[interface{}]interface{}
-	err := yaml.Unmarshal(values, &model)
+
+	tpl, err := parseTemplate(tplPath)
 	if err != nil {
 		return err
 	}
 
+	var model map[interface{}]interface{}
+	err = yaml.Unmarshal(values, &model)
+	if err != nil {
+		return err
+	}
+
+	return tpl.Execute(output, model)
+}
+
+func parseTemplate(tpl string) (*template.Template, error) {
 	jigFuncMap := template.FuncMap{
 		"issuesFlatList": func(issuesMap ExtractedIssue) []ExtractedIssue {
 			uniqueIssuesIdx := make(map[string]int)
@@ -52,10 +62,5 @@ func Generate(tplPath string, values []byte, output io.Writer) error {
 		},
 	}
 
-	tpl, err := template.New(filepath.Base(tplPath)).Funcs(sprig.FuncMap()).Funcs(jigFuncMap).ParseFiles(tplPath)
-	if err != nil {
-		return err
-	}
-
-	return tpl.Execute(output, model)
+	return template.New(filepath.Base("tpl")).Funcs(sprig.FuncMap()).Funcs(jigFuncMap).Parse(tpl)
 }

@@ -281,7 +281,16 @@ jig --config config/.jig.yaml enrich models/model.yaml
 jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml 
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### Retrieving the File from GitLab
+
+You can retrieve the raw file of the template and of the model from GitLab using the following URL:
+
+```shell
+https://gitlab.com/api/v4/projects/12345/repository/files/xxxx/raw?ref=xxxx
+```
+
+Please note that the `PRIVATE-TOKEN` in the request header for authentication is automatically taken from the `gitToken` flag.
+
 
 <!-- ROADMAP -->
 ## Roadmap

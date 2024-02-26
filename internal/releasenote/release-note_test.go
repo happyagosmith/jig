@@ -62,7 +62,7 @@ func TestGenerate(t *testing.T) {
 			tplFile.Close()
 
 			mockWriter := &bytes.Buffer{}
-			err = releaseNote.Generate(tplFile.Name(), values, mockWriter)
+			err = releaseNote.Generate(tt.tplContent, values, mockWriter)
 			if err != nil {
 				t.Fatal(err)
 			}

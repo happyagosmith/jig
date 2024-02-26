@@ -27,17 +27,14 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := viper.GetString("model")
 			tplPath := args[0]
+
+			fl := NewFileLoader(viper.GetString("gitToken"))
 			cmd.Printf("using model file: %s\n", modelPath)
-			if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-				CheckErr(err)
-			}
+			v, err := fl.GetFile(modelPath)
+			CheckErr(err)
 
 			cmd.Printf("using template file: %s\n", tplPath)
-			if _, err := os.Stat(tplPath); os.IsNotExist(err) {
-				CheckErr(err)
-			}
-
-			v, err := os.ReadFile(modelPath)
+			tpl, err := fl.GetFile(tplPath)
 			CheckErr(err)
 
 			if enrich := viper.GetBool("withEnrich"); enrich {
@@ -54,7 +51,7 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 				defer output.Close()
 			}
 
-			err = releaseNote.Generate(tplPath, v, output)
+			err = releaseNote.Generate(string(tpl), v, output)
 			CheckErr(err)
 			if outputPath != "" {
 				fmt.Printf("\nrelease notes generated successfully at %s\n", outputPath)

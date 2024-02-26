@@ -195,11 +195,10 @@ generatedValues:
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := args[0]
+			fl := NewFileLoader(viper.GetString("gitToken"))
+
 			cmd.Printf("using model file: %s\n", modelPath)
-			if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-				CheckErr(err)
-			}
-			v, err := os.ReadFile(modelPath)
+			v, err := fl.GetFile(modelPath)
 			CheckErr(err)
 
 			b := EnrichModel(v)
