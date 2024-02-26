@@ -98,11 +98,16 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	}
 
 	issues := make([]model.ExtractedIssue, 0, len(jissues))
+	isPresent := map[string]bool{}
 
 	subTaskParents := []string{}
 	for _, issue := range jissues {
+		if isPresent[issue.Key] {
+			continue
+		}
+		isPresent[issue.Key] = true
 		parent := issue.Fields.Parent
-		if issue.Fields.Type.Subtask && parent != nil && parent.Key != "" {
+		if issue.Fields.Type.Subtask && parent != nil && parent.Key != "" && !isPresent[parent.Key] {
 			fmt.Printf("issue %s is a subtask. add parent key %s instead\n", issue.Key, parent.Key)
 			subTaskParents = append(subTaskParents, parent.Key)
 			breakingChange[parent.Key] = breakingChange[issue.Key]
@@ -129,6 +134,10 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 	}
 
 	for _, issue := range pIssues {
+		if isPresent[issue.Key] {
+			continue
+		}
+		isPresent[issue.Key] = true
 		issues = append(issues, model.ExtractedIssue{
 			Category:         j.extractIssueCategory(issue),
 			IssueKey:         issue.Key,

@@ -15,7 +15,7 @@ func TestGit(t *testing.T) {
 	t.Run("parse jira commits", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare.json")
+			b, _ := os.ReadFile("testdata/git-compare.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -42,7 +42,7 @@ func TestGit(t *testing.T) {
 	t.Run("parse feature from conventional commit", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			b, _ := os.ReadFile("testdata/git-compare-conventional-commit.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -63,7 +63,7 @@ func TestGit(t *testing.T) {
 	t.Run("parse bug fixed from conventional commit", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			b, _ := os.ReadFile("testdata/git-compare-conventional-commit.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -84,7 +84,7 @@ func TestGit(t *testing.T) {
 	t.Run("parse breaking change from conventional commit", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			b, _ := os.ReadFile("testdata/git-compare-conventional-commit.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -101,7 +101,7 @@ func TestGit(t *testing.T) {
 	t.Run("parse unknown issue tracker from conventional commit", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			b, _ := os.ReadFile("testdata/git-compare-conventional-commit.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -122,7 +122,7 @@ func TestGit(t *testing.T) {
 	t.Run("add feature without issuekey from conventional commit", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			b, _ := os.ReadFile("testdata/git-compare-conventional-commit.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -143,7 +143,7 @@ func TestGit(t *testing.T) {
 	t.Run("not add feature without issuekey from conventional commit", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/git-compare-conventional-commit.json")
+			b, _ := os.ReadFile("testdata/git-compare-conventional-commit.json")
 			w.Write(b)
 		}))
 		defer srv.Close()

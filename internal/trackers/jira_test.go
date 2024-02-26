@@ -52,7 +52,7 @@ func TestJiraGetKnownIssues(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				gotRequest = r
 				w.WriteHeader(200)
-				b, _ := os.ReadFile("data/jira-issues.json")
+				b, _ := os.ReadFile("testdata/jira-issues.json")
 				w.Write(b)
 			}))
 			defer srv.Close()
@@ -73,7 +73,7 @@ func TestJira(t *testing.T) {
 	t.Run("test jira GetIssues with no commits", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/jira-issues.json")
+			b, _ := os.ReadFile("testdata/jira-issues.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -94,7 +94,7 @@ func TestJira(t *testing.T) {
 	t.Run("test jira GetIssues", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/jira-issues.json")
+			b, _ := os.ReadFile("testdata/jira-issues.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
@@ -117,10 +117,32 @@ func TestJira(t *testing.T) {
 		assert.True(t, i[4].Category == model.SUB_TASK)
 	})
 
+	t.Run("test jira GetIssues with subtask", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			b, _ := os.ReadFile("testdata/jira-subtask.json")
+			w.Write(b)
+		}))
+		defer srv.Close()
+
+		jira, err := trackers.NewJira(srv.URL, "jiraUsername", "jiraPassword",
+			trackers.WithClosedFeatureFilter("STORY", "GOLIVE"),
+			trackers.WithClosedFeatureFilter("TECH TASK", "Completata"),
+			trackers.WithFixedBugFilter("BUG", "FIXED"),
+			trackers.WithFixedBugFilter("BUG", "RELEASED"),
+		)
+		assert.NoError(t, err, "NewJira error must be nil")
+
+		i, err := jira.GetIssues([]git.CommitDetail{{IssueKey: "test", IssueTracker: parsers.JIRA}})
+		assert.NoError(t, err, "GetIssues error must be nil")
+
+		assert.True(t, len(i) == 2)
+	})
+
 	t.Run("test jira GetKnownIssues", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			b, _ := os.ReadFile("data/jira-issues.json")
+			b, _ := os.ReadFile("testdata/jira-issues.json")
 			w.Write(b)
 		}))
 		defer srv.Close()
