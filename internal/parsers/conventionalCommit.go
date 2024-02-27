@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -24,6 +25,26 @@ func (i CCType) String() string {
 
 func (s CCType) MarshalYAML() (interface{}, error) {
 	return s.String(), nil
+}
+
+func (cct *CCType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+
+	switch strings.ToLower(s) {
+	case "unknown":
+		*cct = UNKNOWN
+	case "feature":
+		*cct = FEATURE
+	case "bug_fix":
+		*cct = BUG_FIX
+	default:
+		return fmt.Errorf("invalid CCType %q", s)
+	}
+
+	return nil
 }
 
 type ConventionalCommit struct {

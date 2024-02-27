@@ -1,7 +1,7 @@
 # RELEASE NOTE
 This is an example of Release Note that uses the generated valuse by jig
 
-# DETTAGLI RILASCIO
+# RELEASE DETAILS
 
 |**Nome servizio**             | **versione** |
 |------------------------------|--------------|
@@ -11,7 +11,7 @@ This is an example of Release Note that uses the generated valuse by jig
 {{- end }}
 {{- end }}
 
-# NUOVA BASELINE
+# NEW BASELINE
 |**Nome servizio**             | **versione** |
 |------------------------------|--------------|
 {{- range .services }}
@@ -20,21 +20,21 @@ This is an example of Release Note that uses the generated valuse by jig
 {{- end }}
 {{- end }}
 
-## NUOVE FUNZIONALITA'
+## NEW FEATUREs
 {{- range  $key, $value := .generatedValues.features }}
 {{- range  $value }}
 - |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}](https://happyagosmith.atlassian.net/browse/{{ .issueKey }})
 {{- end }}
 {{- end }}
 
-## BUG RISOLTI
+## FIXED BUGs
 {{- range $key, $value := .generatedValues.bugs }}
 {{- range  $value }}
 - |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}](https://happyagosmith.atlassian.net/browse/{{ .issueKey }})
 {{- end }}
 {{- end }} 
 
-## PROBLEMI NOTI
+## KNOWN ISSUEs
 {{- range $key, $value := .generatedValues.knownIssues }}
 {{- range  $value }}
 - {{ .issueSummary }} [{{ .issueKey }}](https://happyagosmith.atlassian.net/browse/{{ .issueKey }})
