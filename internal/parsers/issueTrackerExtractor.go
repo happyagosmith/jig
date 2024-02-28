@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -17,12 +18,30 @@ const (
 	JIRA
 )
 
-func (i IssueTrackerType) String() string {
-	return []string{"NONE", "JIRA"}[i]
+func (itt IssueTrackerType) String() string {
+	return []string{"NONE", "JIRA"}[itt]
 }
 
-func (i IssueTrackerType) MarshalYAML() (interface{}, error) {
-	return i.String(), nil
+func (itt IssueTrackerType) MarshalYAML() (interface{}, error) {
+	return itt.String(), nil
+}
+
+func (itt *IssueTrackerType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+
+	switch strings.ToLower(s) {
+	case "none":
+		*itt = NONE
+	case "jira":
+		*itt = JIRA
+	default:
+		return fmt.Errorf("invalid IssueTrackerType %q", s)
+	}
+
+	return nil
 }
 
 type IssueDetail struct {

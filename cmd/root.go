@@ -41,7 +41,9 @@ conforms to a particular template.
 
 func CheckErr(e error) {
 	if e != nil {
+		rootCmd.Print("Error: ")
 		rootCmd.PrintErr(e)
+		rootCmd.Print("\n")
 		os.Exit(-1)
 	}
 }
@@ -100,6 +102,7 @@ func init() {
 
 	rootCmd.AddCommand(newEnrichCmd())
 	rootCmd.AddCommand(newGenerateCmd())
+	rootCmd.AddCommand(setVersions())
 }
 
 func initConfig() {

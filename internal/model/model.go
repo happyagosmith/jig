@@ -2,11 +2,13 @@ package model
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/happyagosmith/jig/internal/git"
 	"github.com/happyagosmith/jig/internal/parsers"
+	"github.com/happyagosmith/jig/internal/utils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,16 +20,13 @@ type Repo struct {
 	ToCommit      string             `yaml:"toCommit,omitempty"`
 	FromTag       string             `yaml:"previousVersion,omitempty"`
 	ToTag         string             `yaml:"version,omitempty"`
+	CheckTag      string             `yaml:"checkVersion,omitempty"`
 	Project       string             `yaml:"jiraProject,omitempty"`
 	Component     string             `yaml:"jiraComponent,omitempty"`
 	CommitDetails []git.CommitDetail `yaml:"extractedKeys,omitempty"`
-	HasBreaking   bool               `yaml:"hasBreaking"`
-	HasNewFeature bool               `yaml:"hasNewFeature"`
-	HasBugFixed   bool               `yaml:"hasBugFixed"`
-}
-
-type Conf struct {
-	GitRepos []Repo `yaml:"services"`
+	HasBreaking   bool               `yaml:"hasBreaking,omitempty"`
+	HasNewFeature bool               `yaml:"hasNewFeature,omitempty"`
+	HasBugFixed   bool               `yaml:"hasBugFixed,omitempty"`
 }
 
 type ExtractedIssue struct {
@@ -53,10 +52,10 @@ type GeneratedValues struct {
 }
 
 type Model struct {
-	gValues       GeneratedValues
-	conf          Conf
+	GValues       *GeneratedValues `yaml:"generatedValues,omitempty"`
+	GitRepos      []Repo           `yaml:"services"`
 	issueTrackers []IssuesTracker
-	modelMap      map[string]any
+	y             *utils.Yaml
 }
 
 type ModelOpt func(*Model)
@@ -70,27 +69,23 @@ func WithIssueTracker(it IssuesTracker) ModelOpt {
 }
 
 func New(values []byte, opts ...ModelOpt) (*Model, error) {
-	var model map[string]any
-	err := yaml.Unmarshal(values, &model)
-	if err != nil {
-		return nil, err
-	}
-
-	var conf Conf
-	err = yaml.Unmarshal(values, &conf)
+	var m Model
+	err := yaml.Unmarshal(values, &m)
 	if err != nil {
 		panic(err.Error())
 	}
+	m.GValues = nil
 
-	m := Model{
-		conf:     conf,
-		modelMap: model,
-		gValues: GeneratedValues{
-			Features:       map[string][]ExtractedIssue{},
-			Bugs:           map[string][]ExtractedIssue{},
-			KnownIssues:    map[string][]ExtractedIssue{},
-			BreakingChange: map[string][]ExtractedIssue{}},
+	yaml, err := utils.NewYaml(values)
+	if err != nil {
+		panic(err.Error())
 	}
+	err = yaml.Delete("generatedValues")
+	if err != nil {
+		panic(err.Error())
+	}
+	
+	m.y = yaml
 
 	for _, o := range opts {
 		o(&m)
@@ -99,11 +94,46 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 	return &m, nil
 }
 
+func (m *Model) SetVersions(rootPath string) error {
+	for i, repo := range m.GitRepos {
+		if !strings.HasPrefix(repo.CheckTag, "@") {
+			continue
+		}
+
+		p := strings.Split(repo.CheckTag, ":")
+		if len(p) < 2 {
+			continue
+		}
+
+		path := strings.Join([]string{rootPath, strings.TrimPrefix(p[0], "@")}, "/")
+		dataYaml, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		wantTag, err := utils.GetYamlValue(dataYaml, p[1])
+		if err != nil {
+			return err
+		}
+
+		if wantTag == repo.ToTag {
+			continue
+		}
+
+		repo.FromTag = repo.ToTag
+		repo.ToTag = wantTag
+
+		m.GitRepos[i] = repo
+	}
+
+	return nil
+}
+
 func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string, keepCCWithoutScope bool) error {
 	if URL == "" || token == "" {
 		return fmt.Errorf("git URL and token are required")
 	}
-	if len(m.conf.GitRepos) == 0 {
+	if len(m.GitRepos) == 0 {
 		fmt.Printf("no git repos to process\n")
 		return nil
 	}
@@ -112,7 +142,12 @@ func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string, ke
 		return err
 	}
 
-	for _, repo := range m.conf.GitRepos {
+	if m.GValues == nil {
+		m.GValues = &GeneratedValues{}
+	}
+
+	m.GValues.GitRepos = []Repo{}
+	for _, repo := range m.GitRepos {
 		if repo.FromTag != "" && repo.FromTag == repo.ToTag {
 			fmt.Printf("same tag %s set in repo.FromTag and repo.ToTag for repo %s. Nothing changed \n", repo.FromTag, repo.Label)
 			continue
@@ -162,17 +197,47 @@ const (
 	OTHER
 )
 
-func (i CategoryType) String() string {
-	return []string{"CLOSED_FEATURE", "FIXED_BUG", "SUB_TASK", "OTHER"}[i]
+func (ct CategoryType) String() string {
+	return []string{"CLOSED_FEATURE", "FIXED_BUG", "SUB_TASK", "OTHER"}[ct]
 }
 
-func (i CategoryType) MarshalYAML() (interface{}, error) {
-	return i.String(), nil
+func (ct CategoryType) MarshalYAML() (interface{}, error) {
+	return ct.String(), nil
+}
+
+func (ct *CategoryType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+
+	switch strings.ToLower(s) {
+	case "closed_feature":
+		*ct = CLOSED_FEATURE
+	case "fixed_bug":
+		*ct = FIXED_BUG
+	case "sub_task":
+		*ct = SUB_TASK
+	case "other":
+		*ct = OTHER
+	default:
+		return fmt.Errorf("invalid CategoryType %q", s)
+	}
+
+	return nil
 }
 
 func (m *Model) EnrichWithIssueTrackers() error {
-	for i := range m.gValues.GitRepos {
-		repo := &m.gValues.GitRepos[i]
+	if m.GValues == nil {
+		m.GValues = &GeneratedValues{}
+	}
+	m.GValues.Features = map[string][]ExtractedIssue{}
+	m.GValues.Bugs = map[string][]ExtractedIssue{}
+	m.GValues.KnownIssues = map[string][]ExtractedIssue{}
+	m.GValues.BreakingChange = map[string][]ExtractedIssue{}
+
+	for i := range m.GValues.GitRepos {
+		repo := &m.GValues.GitRepos[i]
 		err := m.enrichRepoWithIssueTracker(repo)
 		if err != nil {
 			return err
@@ -223,18 +288,18 @@ func (m *Model) addFoundIssues(label string, issues []ExtractedIssue, it parsers
 			continue
 		}
 		if issue.IsBreakingChange {
-			m.gValues.BreakingChange[label] = append(m.gValues.BreakingChange[label], issue)
+			m.GValues.BreakingChange[label] = append(m.GValues.BreakingChange[label], issue)
 			fmt.Print("added as Breaking Change\n")
 			hasBreaking = true
 		}
 		if issue.Category == CLOSED_FEATURE {
-			m.gValues.Features[label] = append(m.gValues.Features[label], issue)
+			m.GValues.Features[label] = append(m.GValues.Features[label], issue)
 			fmt.Print("added as feature\n")
 			hasNewFeature = true
 			continue
 		}
 		if issue.Category == FIXED_BUG {
-			m.gValues.Bugs[label] = append(m.gValues.Bugs[label], issue)
+			m.GValues.Bugs[label] = append(m.GValues.Bugs[label], issue)
 			fmt.Print("added as bug\n")
 			hasBugFixed = true
 			continue
@@ -247,14 +312,14 @@ func (m *Model) addFoundIssues(label string, issues []ExtractedIssue, it parsers
 func (m *Model) addKnownIssues(label string, issues []ExtractedIssue, it parsers.IssueTrackerType) {
 	for _, issue := range issues {
 		issue.IssueTrackerType = it
-		m.gValues.KnownIssues[label] = append(m.gValues.KnownIssues[label], issue)
+		m.GValues.KnownIssues[label] = append(m.GValues.KnownIssues[label], issue)
 		fmt.Printf("added %s\n", issue.String())
 	}
 }
 
 func (m *Model) addCommitDetails(repo Repo, cds []git.CommitDetail) {
 	repo.CommitDetails = cds
-	m.gValues.GitRepos = append(m.gValues.GitRepos, repo)
+	m.GValues.GitRepos = append(m.GValues.GitRepos, repo)
 
 	for _, issue := range cds {
 		if issue.IssueTracker != parsers.NONE {
@@ -269,18 +334,18 @@ func (m *Model) addCommitDetails(repo Repo, cds []git.CommitDetail) {
 			IsBreakingChange: issue.IsBreaking,
 		}
 		if issue.IsBreaking {
-			m.gValues.BreakingChange[repo.Label] = append(m.gValues.BreakingChange[repo.Label], ei)
+			m.GValues.BreakingChange[repo.Label] = append(m.GValues.BreakingChange[repo.Label], ei)
 			fmt.Print("added as Breaking Change\n")
 			repo.HasBreaking = true
 		}
 		if issue.Category == parsers.FEATURE {
-			m.gValues.Features[repo.Label] = append(m.gValues.Features[repo.Label], ei)
+			m.GValues.Features[repo.Label] = append(m.GValues.Features[repo.Label], ei)
 			fmt.Print("added as feature\n")
 			repo.HasNewFeature = true
 			continue
 		}
 		if issue.Category == parsers.BUG_FIX {
-			m.gValues.Bugs[repo.Label] = append(m.gValues.Bugs[repo.Label], ei)
+			m.GValues.Bugs[repo.Label] = append(m.GValues.Bugs[repo.Label], ei)
 			fmt.Print("added as bug\n")
 			repo.HasBugFixed = true
 			continue
@@ -327,11 +392,20 @@ func computeSemanticVersion(currentVersion string, hasBreaking, hasNewFeature, h
 	return fmt.Sprintf("%d.%d.%d", ma, mi, p), nil
 }
 
-func (m *Model) Map() map[string]any {
-	m.modelMap["generatedValues"] = m.gValues
-	return m.modelMap
-}
-
 func (m *Model) Yaml() ([]byte, error) {
-	return yaml.Marshal(m.Map())
+	yb, err := yaml.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	y, err := utils.NewYaml(yb)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.y.Merge(y); err != nil {
+		return nil, err
+	}
+
+	return m.y.Bytes()
 }

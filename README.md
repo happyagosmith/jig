@@ -1,7 +1,4 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
-
-<!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
@@ -12,13 +9,14 @@
       <a href="#how-jig-works">How Jig Works</a>
     </li>
     <li>
-      <a href="#using-custom-and-sprig functions-in-go-text-templates">Using Custom and Sprig Functions in Go Text Templates</a>
+      <a href="#install">Install</a>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#docker-usage">Docker Usage</a></li>
-        <li><a href="#building-from-source">Building from Source</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#running-jig-with-docker">Running Jig with Docker</a></li>
+        <li><a href="#running-jig-from-command-line">Running Jig from Command Line</a></li>
       </ul>
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -27,8 +25,7 @@
   </ol>
 </details>
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+# About The Project
 The project, named "Jig", is a tool designed to automate the creation of release notes for software products composed of one or more components, each with its own Git repository. Jig leverages the information found in commit messages across these repositories and enriches it with details from the issue tracker (e.g., Jira).
 
 The primary goal of Jig is to streamline the process of generating release notes, which is often a time-consuming task. By automatically pulling data from commit messages and issue trackers, Jig ensures that all relevant changes are documented, reducing the risk of missing important information.
@@ -47,31 +44,56 @@ This project is built with:
 * [![Cobra][Cobra]][Cobra-url]
 * [![go-template][go-template]][go-template-url]
 * [![go-sprig][go-sprig]][go-sprig-url]
+* [![yaml-jsonpath][yaml-jsonpath]][yaml-jsonpath]
 
 and we're always open to contributions and suggestions for improvement.
 
-## How Jig Works
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+# How Jig Works
 
 Jig is a tool based on Go text templates. It extracts information from commit messages and issue trackers to generate release notes through the following steps:
 
-1. **Accessing Git Repositories**: Jig uses the `model.yaml` file as configuration details to connect to the different Git repositories of the software product. Here is an example of what this configuration might look like:
-```yaml
-services:
-- gitRepoID: 1234
-  label: service1
-  previousVersion: 0.0.1
-  version: 0.0.2
-- gitRepoID: 5678
-  jiraComponent: jComponent # used to retrieve the known issues from jira
-  jiraProject: jProject # used to retrieve the known issues from jira
-  label: service2
-  previousVersion: 1.2.0
-  version: 1.2.1
+1. **Accessing Git Repositories**: Jig utilizes the `model.yaml` file to store configuration details necessary for connecting to various Git repositories of the software product. This file also contains `version` and `previousVersion` fields. These fields represent the current and preceding versions of the component, respectively, and are used to parse the commit for the release note. Jig uses a separate configuration file named `config.yaml` to connect to Git and to the issue tracker. The configuration details include the URLs, usernames, and tokens/passwords for the Git repositories and the issue tracker.
+
+2. **Parsing Commit Messages**: Once it has access to the repositories, Jig parses the commit messages. If the commit messages follow a certain format (like the Conventional Commits format), Jig extracts useful information such as the type of the commit (fix, feat, etc.) and a short summary of the changes.
+
+3. **Linking to Issue Trackers**: If the commit messages contain issue keys, Jig uses these keys to link the commits to issues in the issue tracker (like Jira). This allows Jig to pull in additional information about the changes, such as the issue description, the issue status (open, closed, in progress, etc.).
+
+4. **Enriching the Model File**: The extracted information is used to enrich the `model.yaml` file. This file serves as the data source for the Go text template. 
+
+5. **Rendering the Template**: The `model.yaml` file is then used to render a completely customizable template. This template forms the basis of the generated release notes.
+
+6. **Generating Release Notes**: Once Jig has all this information and the template is rendered, it generates the release notes. The release notes include a list of all the changes in the new version, grouped by the type of change (features, bug fixes, etc.) and the component they affect. Each change includes the commit message, the issue key, and a link to the issue in the issue tracker for more details.
+
+This process can be automated, so that Jig generates the release notes every time a new version of the software product is released. This saves time and ensures that the release notes are accurate and comprehensive.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+# Install
+## Docker 
+You can create custom Docker images using the provided Dockerfile:
+```shell
+docker build -t jig:latest .
 ```
 
-Each service in the services list represents a different component of the software product, with its own Git repository. The gitRepoID is the identifier of the Git repository, and the version and previousVersion fields indicate the current and previous versions of the component.
+## go Install
 
-Jig uses a separate configuration file named `config.yaml` to connect to Git and to the issue tracker. The configuration details include the URLs, usernames, and tokens/passwords for the Git repositories and the issue tracker. Here is an example of what this configuration might look like:
+First, ensure that you have a compatible version of [Go](https://go.dev/) installed and set up on your system. The minimum required version of Go can be found in the [go.mod](go.mod) file.
+
+To install Jig globally, execute the following command:
+
+```shell
+go install github.com/happyagosmith/jig@latest
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+# Getting Started
+## Configuration
+### config.yaml
+
+Jig employs a distinct configuration file to establish connections to Git and the issue tracker. This file contains essential details such as URLs, usernames, and tokens/passwords for both the Git repositories and the issue tracker. Below is a sample configuration:
 
 ```yaml
 jiraURL: "https://jiraURL/"
@@ -81,11 +103,48 @@ gitURL: "https://gitlab.com/"
 gitToken: "userGitToken"
 ```
 
-2. **Parsing Commit Messages**: Once it has access to the repositories, Jig parses the commit messages. If the commit messages follow a certain format (like the Conventional Commits format), Jig extracts useful information such as the type of the commit (fix, feat, etc.) and a short summary of the changes.
+For a comprehensive list of properties that can be included in the file, refer to the help documentation by executing the following command in your terminal.
 
-3. **Linking to Issue Trackers**: If the commit messages contain issue keys, Jig uses these keys to link the commits to issues in the issue tracker (like Jira). This allows Jig to pull in additional information about the changes, such as the issue description, the issue status (open, closed, in progress, etc.), and any comments or discussions about the issue.
+```shell
+jig --help
+```
 
-4. **Enriching the Model File**: The extracted information is used to enrich the `model.yaml` file. This file serves as the data source for the Go text template. In addition to the configuration details mentioned in the point 1, Jig also generates and adds the following information to the `model.yaml` file:
+### model.yaml
+Jig uses the `model.yaml` file as configuration details to connect to the different Git repositories of the software product. Here is an example of what this configuration might look like:
+```yaml
+services:
+- gitRepoID: 1234
+  label: service1
+  previousVersion: 0.0.1
+  version: 0.0.2
+  checkVersion: '@filepath:$.versions.a'
+- gitRepoID: 5678
+  jiraComponent: jComponent # used to retrieve the known issues from jira
+  jiraProject: jProject # used to retrieve the known issues from jira
+  label: service2
+  previousVersion: 1.2.0
+  version: 1.2.1
+  checkVersion: '@filepath:$.versions.b'
+```
+
+Each service in the services list represents a different component of the software product, with its own Git repository. The `gitRepoID` is the identifier of the Git repository, and the `version` and `previousVersion` fields indicate the current and previous versions of the component.
+
+The `checkVersion` field allows you to specify the file and the YAML path from which the version information should be read. An example configuration might look like '@filepath:$.a.b'.
+
+By executing the command 
+```yaml
+jig setVersions
+```
+
+the `version` field will be updated with the value pointed to by `checkVersion`. If a new value is provided, the `previousVersion` field will be updated with the former value of `version`.
+
+This feature is particularly useful when the version is defined in a separate file within the repository, eliminating the need for redundant information. 
+
+Upon running Jig, the `model.yaml` file will be updated with additional information. This includes details about fixed bugs, known issues pulled from the issue tracker, and Git repositories with their corresponding versions and extracted keys.
+
+This enhanced `model.yaml` file then acts as the input for the Go text template.
+
+Here is an example of the fields that Jig generates:
 
 ```yaml
 generatedValues:
@@ -169,32 +228,22 @@ generatedValues:
       issueTrackerType: JIRA
       isbreakingchange: false
 ```
-This information includes the bugs fixed, known issues extracted from the issue tracker and the git repso with their respective versions and extracted keys from the git repository.
 
-5. **Rendering the Template**: The `model.yaml` file is then used to render a completely customizable template. This template forms the basis of the generated release notes.
+### release note template
 
-6. **Generating Release Notes**: Once Jig has all this information and the template is rendered, it generates the release notes. The release notes include a list of all the changes in the new version, grouped by the type of change (features, bug fixes, etc.) and the component they affect. Each change includes the commit message, the issue key, and a link to the issue in the issue tracker for more details.
+Jig employs the  (go-template text)[https://pkg.go.dev/text/template] syntax to structure the release note. You can find an [example](examples/rn.tpl) that illustrates how to integrate the generated fields into the go-template.
 
-This process can be automated, so that Jig generates the release notes every time a new version of the software product is released. This saves time and ensures that the release notes are accurate and comprehensive.
+Besides the standard functions offered by Go's text/template package, our library also encompasses a collection of custom functions and all functions provided by the Sprig library.
 
-For more details on how to use Jig, including how to use the `extractedKeys` feature, please refer to the command line help. You can access this help by running the command `jig --help` in your terminal.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## Using Custom and Sprig Functions in Go Text Templates
-
-In addition to the standard functions provided by Go's text/template package, our library also includes a set of custom functions and all functions provided by the Sprig library.
-
-### Custom Functions
-
-#### issuesFlatList
+#### Using Custom Jig Functions in Go Text Templates
+##### issuesFlatList
 The issuesFlatList function is a custom function that takes an ExtractedIssue map as an argument and returns a slice of unique ExtractedIssue items.
 
-##### Function Signature
+###### Function Signature
 ```go
 func(issuesMap ExtractedIssue) []ExtractedIssue
 ```
-##### Usage
+###### Usage
 
 In your Go text template, you can use the issuesFlatList function like this:
 
@@ -202,10 +251,10 @@ In your Go text template, you can use the issuesFlatList function like this:
 {{issuesFlatList .generatedValues.features}}
 ```
 
-##### How It Works
+###### How It Works
 The issuesFlatList function works by iterating over the ExtractedIssue map and creating a unique list of issues. It extracts the issue key from each issue and checks if it's already in the list of unique issues. If it's not, it adds the issue to the list. If it is, it updates the existing issue in the list. Additionally, for each unique issue, **it adds a key impactedServices** that contains a list of services that have had an impact.
 
-#### Sprig Functions
+#### Using Sprig Functions in Go Text Templates
 Our library also includes all functions provided by the Sprig library. Sprig is a library that provides more than 100 commonly used template functions. It's inspired by the "Spring" Java library and the "Twig" PHP template engine.
 
 You can use Sprig functions in your Go text templates just like you would use any other function. For a full list of available Sprig functions and their descriptions, please refer to the [Sprig documentation](https://masterminds.github.io/sprig/).
@@ -218,19 +267,16 @@ In your Go text template, you can utilize the issuesFlatList function in conjunc
 
 In this example, the issuesFlatList function is used to iterate over the unique issues from .generatedValues.features. For each issue, it prints the issue key and the impacted services, with the services joined by a comma.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+#### Retrieving the template from GitLab
+You can retrieve the raw file of the template and of the model from GitLab using the following URL:
 
-## Getting Started
-
-## Docker Usage
-
-### Building the Docker Image
-You can create custom Docker images using the provided Dockerfile:
 ```shell
-docker build -t jig:latest .
+https://gitlab.com/api/v4/projects/12345/repository/files/xxxx/raw?ref=xxxx
 ```
 
-### Running Jig with Docker
+Please note that the `PRIVATE-TOKEN` in the request header for authentication is automatically taken from the `gitToken` flag.
+
+## Running Jig with Docker
 The most straightforward way to run Jig (assuming you're in the root directory of the Git repository and the configuration file is available) is:
 
 ```shell
@@ -248,21 +294,6 @@ Then, you can use the cat command to extract the lines related to the Release No
 cat rn.md | sed -n '/\#/,$p'
 ```
 
-<!-- DOCKER -->
-
-## go install
-
-First, ensure that you have a compatible version of [Go](https://go.dev/) installed and set up on your system. The minimum required version of Go can be found in the [go.mod](go.mod) file.
-
-To install Jig globally, execute the following command:
-
-```shell
-go install github.com/happyagosmith/jig@latest
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- SOURCE -->
 ### Running Jig from Command Line
 The simplest way to run Jig (assuming the configuration file and the model file are present) is to execute:
 ```shell
@@ -281,24 +312,11 @@ jig --config config/.jig.yaml enrich models/model.yaml
 jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml 
 ```
 
-### Retrieving the File from GitLab
-
-You can retrieve the raw file of the template and of the model from GitLab using the following URL:
-
-```shell
-https://gitlab.com/api/v4/projects/12345/repository/files/xxxx/raw?ref=xxxx
-```
-
-Please note that the `PRIVATE-TOKEN` in the request header for authentication is automatically taken from the `gitToken` flag.
-
-
-<!-- ROADMAP -->
-## Roadmap
+# Roadmap
 See the [open issues](https://github.com/happyagosmith/jig/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- CONTRIBUTING -->
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -331,3 +349,5 @@ Distributed under the Apache Version 2.0 License. See `LICENSE.txt` for more inf
 [cobra-url]: https://github.com/spf13/cobra
 [go-sprig]: https://img.shields.io/static/v1?label=sprig&message=latest&color=blue
 [go-sprig-url]: https://masterminds.github.io/sprig/
+[yaml-jsonpath]: https://img.shields.io/static/v1?label=yaml-jsonpath&message=v0.3.2&color=blue
+[yaml-jsonpath-url]: https://github.com/vmware-labs/yaml-jsonpath
