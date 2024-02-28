@@ -124,7 +124,7 @@ services:
   label: service2
   previousVersion: 1.2.0
   version: 1.2.1
-  checkVersion: '@filepath:$.versions.b'
+  checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
 ```
 
 Each service in the services list represents a different component of the software product, with its own Git repository. The `gitRepoID` is the identifier of the Git repository, and the `version` and `previousVersion` fields indicate the current and previous versions of the component.

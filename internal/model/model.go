@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -116,7 +117,11 @@ func (m *Model) SetVersions(rootPath string) error {
 			continue
 		}
 
-		path := strings.Join([]string{rootPath, strings.TrimPrefix(p[0], "@")}, "/")
+		path := strings.TrimPrefix(p[0], "@")
+		if strings.HasPrefix(path, ".") {
+			path = filepath.Join(rootPath, path)
+		}
+
 		dataYaml, err := os.ReadFile(path)
 		if err != nil {
 			return err
