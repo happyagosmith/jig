@@ -58,7 +58,7 @@ Jig is a tool based on Go text templates. It extracts information from commit me
 
 2. **Parsing Commit Messages**: Once it has access to the repositories, Jig parses the commit messages. If the commit messages follow a certain format (like the Conventional Commits format), Jig extracts useful information such as the type of the commit (fix, feat, etc.) and a short summary of the changes.
 
-3. **Linking to Issue Trackers**: If the commit messages contain issue keys, Jig uses these keys to link the commits to issues in the issue tracker (like Jira). This allows Jig to pull in additional information about the changes, such as the issue description, the issue status (open, closed, in progress, etc.), and any comments or discussions about the issue.
+3. **Linking to Issue Trackers**: If the commit messages contain issue keys, Jig uses these keys to link the commits to issues in the issue tracker (like Jira). This allows Jig to pull in additional information about the changes, such as the issue description, the issue status (open, closed, in progress, etc.).
 
 4. **Enriching the Model File**: The extracted information is used to enrich the `model.yaml` file. This file serves as the data source for the Go text template. 
 
@@ -349,5 +349,5 @@ Distributed under the Apache Version 2.0 License. See `LICENSE.txt` for more inf
 [cobra-url]: https://github.com/spf13/cobra
 [go-sprig]: https://img.shields.io/static/v1?label=sprig&message=latest&color=blue
 [go-sprig-url]: https://masterminds.github.io/sprig/
-[yaml-jsonpath]: https://img.shields.io/static/v1?label=yaml-jsonpath&message=0.3.2&color=blue
+[yaml-jsonpath]: https://img.shields.io/static/v1?label=yaml-jsonpath&message=v0.3.2&color=blue
 [yaml-jsonpath-url]: https://github.com/vmware-labs/yaml-jsonpath
