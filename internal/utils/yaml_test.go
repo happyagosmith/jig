@@ -147,8 +147,8 @@ key2: value2
 			wantContent: "",
 		},
 		{
-			name: "delete unique key",
-			content: `key1: value1`,
+			name:        "delete unique key",
+			content:     `key1: value1`,
 			key:         "key1",
 			wantErr:     false,
 			wantContent: "",
@@ -175,6 +175,68 @@ key2: value2
 
 			if string(bytes) != tt.wantContent {
 				t.Errorf("Delete() = %v, want %v", string(bytes), tt.wantContent)
+			}
+		})
+	}
+}
+
+func TestGetValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		yamlData []byte
+		path     string
+		expected string
+	}{
+		{
+			name: "Test 1",
+			yamlData: []byte(`
+a:
+  b:
+    c: hello
+`),
+			path:     "$.a.b.c",
+			expected: "hello",
+		},
+		{
+			name: "Test 2",
+			yamlData: []byte(`
+a:
+  - b: hello
+`),
+			path:     "$.a[0].b",
+			expected: "hello",
+		},
+		{
+			name: "Test 3",
+			yamlData: []byte(`
+a:
+  - b: hello
+    c: label
+`),
+			path:     "$.a[?(@.c == 'label')].b",
+			expected: "hello",
+		},
+		{
+			name: "Test 4",
+			yamlData: []byte(`
+a: hello
+`),
+			path:     "a",
+			expected: "hello",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y, err := utils.NewYaml([]byte(tt.yamlData))
+			if err != nil {
+				t.Fatalf("NewYaml() error = %v", err)
+			}
+
+			result, err := y.GetValue(tt.path)
+			assert.NoError(t, err, "not expected error")
+			if result != tt.expected {
+				t.Errorf("ExtractValue(%s) = %s; want %s", tt.path, result, tt.expected)
 			}
 		})
 	}

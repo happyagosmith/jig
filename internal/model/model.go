@@ -16,8 +16,6 @@ type Repo struct {
 	Label         string             `yaml:"label,omitempty"`
 	ServiceName   string             `yaml:"serviceName,omitempty"`
 	ID            string             `yaml:"gitRepoID,omitempty"`
-	FromCommit    string             `yaml:"fromCommit,omitempty"`
-	ToCommit      string             `yaml:"toCommit,omitempty"`
 	FromTag       string             `yaml:"previousVersion,omitempty"`
 	ToTag         string             `yaml:"version,omitempty"`
 	CheckTag      string             `yaml:"checkVersion,omitempty"`
@@ -55,10 +53,23 @@ type Model struct {
 	GValues       *GeneratedValues `yaml:"generatedValues,omitempty"`
 	GitRepos      []Repo           `yaml:"services"`
 	issueTrackers []IssuesTracker
+	vcs           VCS
 	y             *utils.Yaml
 }
 
 type ModelOpt func(*Model)
+
+type VCS interface {
+	ExtractCommits(id, from, to string) ([]git.CommitDetail, error)
+}
+
+func WithVCS(vcs VCS) ModelOpt {
+	return func(m *Model) {
+		if vcs != nil {
+			m.vcs = vcs
+		}
+	}
+}
 
 func WithIssueTracker(it IssuesTracker) ModelOpt {
 	return func(m *Model) {
@@ -84,7 +95,7 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 	if err != nil {
 		panic(err.Error())
 	}
-	
+
 	m.y = yaml
 
 	for _, o := range opts {
@@ -111,7 +122,12 @@ func (m *Model) SetVersions(rootPath string) error {
 			return err
 		}
 
-		wantTag, err := utils.GetYamlValue(dataYaml, p[1])
+		y, err := utils.NewYaml(dataYaml)
+		if err != nil {
+			return err
+		}
+
+		wantTag, err := y.GetValue(p[1])
 		if err != nil {
 			return err
 		}
@@ -129,17 +145,10 @@ func (m *Model) SetVersions(rootPath string) error {
 	return nil
 }
 
-func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string, keepCCWithoutScope bool) error {
-	if URL == "" || token == "" {
-		return fmt.Errorf("git URL and token are required")
-	}
+func (m *Model) EnrichWithGit() error {
 	if len(m.GitRepos) == 0 {
 		fmt.Printf("no git repos to process\n")
 		return nil
-	}
-	git, err := git.NewClient(URL, token, issuePattern, git.WithCustomPattern(customPattern), git.WithKeepCCWithoutScope(keepCCWithoutScope))
-	if err != nil {
-		return err
 	}
 
 	if m.GValues == nil {
@@ -153,25 +162,12 @@ func (m *Model) EnrichWithGit(URL, token, issuePattern, customPattern string, ke
 			continue
 		}
 
-		if repo.FromCommit != "" && repo.FromCommit == repo.ToCommit {
-			fmt.Printf("same commit %s set in repo.FromCommit and repo.ToCommit for repo %s. Nothing changed \n", repo.FromCommit, repo.Label)
-
-			continue
-		}
-
 		fc := repo.FromTag
-		if fc == "" {
-			fc = repo.FromCommit
-		}
-
 		tc := repo.ToTag
-		if tc == "" {
-			tc = repo.ToCommit
-		}
 
 		fmt.Printf("\nprocessing repo \"%s\" from \"%s\" to \"%s\"\n", repo.Label, fc, tc)
 
-		cds, err := git.ExtractCommits(repo.ID, fc, tc)
+		cds, err := m.vcs.ExtractCommits(repo.ID, fc, tc)
 		if err != nil {
 			return err
 		}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/happyagosmith/jig/internal/git"
 	"github.com/happyagosmith/jig/internal/model"
 	"github.com/happyagosmith/jig/internal/trackers"
 	"github.com/spf13/cobra"
@@ -56,11 +57,7 @@ func ConfigureJira() trackers.Jira {
 	return jiraTracker
 }
 
-func EnrichModel(b []byte) []byte {
-	jiraTracker := ConfigureJira()
-	model, err := model.New(b, model.WithIssueTracker(jiraTracker))
-	CheckErr(err)
-
+func ConfigureVCS() (model.VCS, error) {
 	gitURL := viper.GetString("gitURL")
 	gitToken := viper.GetString("gitToken")
 	issuePattern := viper.GetString("issuePattern")
@@ -75,12 +72,25 @@ func EnrichModel(b []byte) []byte {
 	fmt.Printf("using %s -> %s\n", "customCommitPattern", customCommitPattern)
 	fmt.Printf("using %s -> %v\n", "withCCWithoutScope", withCCWithoutScope)
 
-	err = model.EnrichWithGit(
-		gitURL,
-		gitToken,
-		issuePattern,
-		customCommitPattern,
-		withCCWithoutScope)
+	git, err := git.NewClient(gitURL, gitToken, issuePattern, git.WithCustomPattern(customCommitPattern), git.WithKeepCCWithoutScope(withCCWithoutScope))
+	if err != nil {
+		return nil, err
+	}
+	CheckErr(err)
+
+	return git, nil
+}
+
+func EnrichModel(b []byte) []byte {
+	jiraTracker := ConfigureJira()
+	vcs, err := ConfigureVCS()
+	CheckErr(err)
+
+	model, err := model.New(b, model.WithVCS(vcs),
+		model.WithIssueTracker(jiraTracker))
+	CheckErr(err)
+
+	err = model.EnrichWithGit()
 	CheckErr(err)
 
 	err = model.EnrichWithIssueTrackers()

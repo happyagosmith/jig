@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
 	"gopkg.in/yaml.v3"
 )
 
@@ -14,16 +15,31 @@ type Yaml struct {
 
 func NewYaml(b []byte) (*Yaml, error) {
 	var yn yaml.Node
-	if err := yaml.Unmarshal(b, &yn); err != nil {
-		return nil, err
-	}
 
-	var v map[string]interface{}
-	if err := yaml.Unmarshal(b, &v); err != nil {
+	err := yaml.Unmarshal(b, &yn)
+	if err != nil {
 		return nil, err
 	}
 
 	return &Yaml{node: &yn}, nil
+}
+
+func (y *Yaml) GetValue(path string) (string, error) {
+	v, err := yamlpath.NewPath(path)
+	if err != nil {
+		return "", err
+	}
+
+	result, err := v.Find(y.node)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result) == 0 {
+		return "", fmt.Errorf("path not found: %s", path)
+	}
+
+	return result[0].Value, nil
 }
 
 func (y *Yaml) Delete(key string) error {
@@ -116,18 +132,6 @@ func mergeNodes(a, b *yaml.Node) error {
 	}
 
 	return nil
-}
-
-func ToYaml(v any, indent int) string {
-	data, err := yaml.Marshal(v)
-	if err != nil {
-		return ""
-	}
-	is := "\n" + strings.Repeat(" ", indent)
-	ys := string(data)
-	ys = is + strings.ReplaceAll(ys, "\n", is)
-	ys = strings.TrimSuffix(ys, is)
-	return ys
 }
 
 type node struct {
