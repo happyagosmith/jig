@@ -133,7 +133,7 @@ The `checkVersion` field allows you to specify the file and the YAML path from w
 
 By executing the command 
 ```yaml
-jig setVersions
+jig setVersions model.yaml
 ```
 
 the `version` field will be updated with the value pointed to by `checkVersion`. If a new value is provided, the `previousVersion` field will be updated with the former value of `version`.
