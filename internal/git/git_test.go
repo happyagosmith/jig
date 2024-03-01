@@ -1,6 +1,7 @@
 package git_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGit(t *testing.T) {
+func TestGitCommit(t *testing.T) {
 	t.Run("parse jira commits", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -169,4 +170,43 @@ func TestGit(t *testing.T) {
 		_, err = git.ExtractCommits("", "from", "to")
 		assert.NotNil(t, err, "ParseCommits should return error")
 	})
+}
+
+func TestGetRepoURL(t *testing.T) {
+	gitRepoID := "123"
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/api/v4/projects/"+gitRepoID {
+			rw.Write([]byte(`{"web_url": "https://gitlab.example.com/my/repo"}`))
+		} else {
+			http.Error(rw, "Not found", http.StatusNotFound)
+		}
+	}))
+
+	g, err := git.NewClient(server.URL, "token", "")
+	assert.NoError(t, err)
+	releaseURL, err := g.GetRepoURL(gitRepoID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "https://gitlab.example.com/my/repo", releaseURL)
+}
+
+func TestGetReleaseURL(t *testing.T) {
+	gitRepoID := "123"
+	version := "v1.0.0"
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == fmt.Sprintf("/api/v4/projects/%s/releases/%s", gitRepoID, version) {
+			rw.Write([]byte(`{"_links": { "self": "https://gitlab.example.com/my/repo/releases/v1.0.0"}}`))
+		} else {
+			http.Error(rw, "Not found", http.StatusNotFound)
+		}
+	}))
+
+	g, err := git.NewClient(server.URL, "token", "")
+	assert.NoError(t, err)
+	releaseURL, err := g.GetReleaseURL(gitRepoID, version)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "https://gitlab.example.com/my/repo/releases/v1.0.0", releaseURL)
 }

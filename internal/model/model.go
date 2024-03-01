@@ -20,6 +20,8 @@ type Repo struct {
 	FromTag       string             `yaml:"previousVersion,omitempty"`
 	ToTag         string             `yaml:"version,omitempty"`
 	CheckTag      string             `yaml:"checkVersion,omitempty"`
+	GitRepoURL        string             `yaml:"gitRepoURL,omitempty"`
+	GitReleaseURL string             `yaml:"gitReleaseURL,omitempty"`
 	Project       string             `yaml:"jiraProject,omitempty"`
 	Component     string             `yaml:"jiraComponent,omitempty"`
 	CommitDetails []git.CommitDetail `yaml:"extractedKeys,omitempty"`
@@ -62,6 +64,8 @@ type ModelOpt func(*Model)
 
 type VCS interface {
 	ExtractCommits(id, from, to string) ([]git.CommitDetail, error)
+	GetReleaseURL(id, tag string) (string, error)
+	GetRepoURL(id string) (string, error)
 }
 
 func WithVCS(vcs VCS) ModelOpt {
@@ -145,6 +149,29 @@ func (m *Model) SetVersions(rootPath string) error {
 		repo.ToTag = wantTag
 
 		m.GitRepos[i] = repo
+	}
+
+	return nil
+}
+
+func (m *Model) SetReposInfos() error {
+	if m.vcs == nil {
+		return fmt.Errorf("vcs not set")
+	}
+	for i, repo := range m.GitRepos {
+
+		rUrl, err := m.vcs.GetRepoURL(repo.ID)
+		if err != nil {
+			return err
+		}
+
+		vUrl, err := m.vcs.GetReleaseURL(repo.ID, repo.ToTag)
+		if err != nil {
+			return err
+		}
+
+		m.GitRepos[i].GitRepoURL = rUrl
+		m.GitRepos[i].GitReleaseURL = vUrl
 	}
 
 	return nil

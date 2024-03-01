@@ -132,7 +132,7 @@ Each service in the services list represents a different component of the softwa
 The `checkVersion` field allows you to specify the file and the YAML path from which the version information should be read. An example configuration might look like '@filepath:$.a.b'.
 
 By executing the command 
-```yaml
+```shell
 jig setVersions model.yaml
 ```
 
@@ -140,7 +140,36 @@ the `version` field will be updated with the value pointed to by `checkVersion`.
 
 This feature is particularly useful when the version is defined in a separate file within the repository, eliminating the need for redundant information. 
 
-Upon running Jig, the `model.yaml` file will be updated with additional information. This includes details about fixed bugs, known issues pulled from the issue tracker, and Git repositories with their corresponding versions and extracted keys.
+Besides, the model.yaml file will include the "gitRepoURL" and the "gitReleaseURL"  for each repo 
+as well. Following an example:	
+
+```yaml
+services:
+	- gitRepoID: 1234
+	  label: service1
+	  previousVersion: 0.0.1
+	  version: 0.0.2
+	  checkVersion: '@filepath:$.versions.a'
+	  gitRepoURL: https://repo-service1-url
+    gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
+	- gitRepoID: 5678
+	  jiraComponent: jComponent # used to retrieve the known issues from jira
+	  jiraProject: jProject # used to retrieve the known issues from jira
+	  label: service2
+	  previousVersion: 1.2.0
+	  version: 1.2.1
+	  checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
+	  gitRepoURL: https://repo-service2-url/-/releases/1.2.1
+    gitReleaseURL: https://repo-service2-url/-/releases/1.2.1
+```
+
+Upon running the command 
+
+```shell
+jig enrich model.yaml
+```
+
+the `model.yaml` file will be enriched with additional information. This includes details about fixed bugs, known issues pulled from the issue tracker, and Git repositories with their corresponding versions and extracted keys.
 
 This enhanced `model.yaml` file then acts as the input for the Go text template.
 
@@ -197,6 +226,9 @@ generatedValues:
     label: service1
     previousVersion: 0.0.1
     version: 0.0.2
+	  checkVersion: '@filepath:$.versions.a'
+	  gitRepoURL: https://repo-service1-url
+    gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
     extractedKeys:
     - category: BUG_FIX
       issueKey: AAA-000
@@ -215,6 +247,9 @@ generatedValues:
     jiraProject: jProject # used to retrieve the known issues
     previousVersion: 1.2.0
     version: 1.2.1
+    checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
+	  gitURL: https://repo-service2-url/-/releases/1.2.1
+    gitReleaseURL: https://repo-service2-url/-/releases/1.2.1
     extractedKeys:
     - category: BUG_FIX
       issueKey: AAA-222
