@@ -111,3 +111,34 @@ func (g Git) ExtractCommits(id, from, to string) ([]CommitDetail, error) {
 
 	return cds, nil
 }
+
+type ProjectResponse struct {
+	WebURL string `json:"web_url"`
+}
+
+type ReleaseResponse struct {
+	Links struct {
+		Self string `json:"self"`
+	} `json:"_links"`
+}
+
+func (g Git) GetRepoURL(gitRepoID string) (string, error) {
+	p, _, err := g.c.Projects.GetProject(gitRepoID, nil)
+	if err != nil {
+		return "", err
+	}
+
+	repoURL := p.WebURL
+
+	return repoURL, nil
+}
+
+func (g Git) GetReleaseURL(gitRepoID, version string) (string, error) {
+	r, _, err := g.c.Releases.GetRelease(gitRepoID, version, nil)
+	if err != nil {
+		return "", err
+	}
+	releaseURL := r.Links.Self
+
+	return releaseURL, nil
+}

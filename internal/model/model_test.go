@@ -21,6 +21,16 @@ func (m *MockGitLabClient) ExtractCommits(repoID, fromTag, toTag string) ([]git.
 	return args.Get(0).([]git.CommitDetail), args.Error(1)
 }
 
+func (m *MockGitLabClient) GetReleaseURL(id, version string) (string, error) {
+	args := m.Called(id)
+	return args.Get(0).(string), args.Error(1)
+}
+
+func (m *MockGitLabClient) GetRepoURL(id string) (string, error) {
+	args := m.Called(id)
+	return args.Get(0).(string), args.Error(1)
+}
+
 func TestSetVersions(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "example.*.yaml")
 	if err != nil {
