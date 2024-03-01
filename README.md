@@ -266,7 +266,7 @@ generatedValues:
 
 ### release note template
 
-Jig employs the  (go-template text)[https://pkg.go.dev/text/template] syntax to structure the release note. You can find an [example](examples/rn.tpl) that illustrates how to integrate the generated fields into the go-template.
+Jig employs the [go-template text](https://pkg.go.dev/text/template]) syntax to structure the release note. You can find an [example](examples/rn.tpl) that illustrates how to integrate the generated fields into the go-template.
 
 Besides the standard functions offered by Go's text/template package, our library also encompasses a collection of custom functions and all functions provided by the Sprig library.
 
@@ -289,7 +289,7 @@ In your Go text template, you can use the issuesFlatList function like this:
 ###### How It Works
 The issuesFlatList function works by iterating over the ExtractedIssue map and creating a unique list of issues. It extracts the issue key from each issue and checks if it's already in the list of unique issues. If it's not, it adds the issue to the list. If it is, it updates the existing issue in the list. Additionally, for each unique issue, **it adds a key impactedServices** that contains a list of services that have had an impact.
 
-#### Using Sprig Functions in Go Text Templates
+##### Using Sprig Functions in Go Text Templates
 Our library also includes all functions provided by the Sprig library. Sprig is a library that provides more than 100 commonly used template functions. It's inspired by the "Spring" Java library and the "Twig" PHP template engine.
 
 You can use Sprig functions in your Go text templates just like you would use any other function. For a full list of available Sprig functions and their descriptions, please refer to the [Sprig documentation](https://masterminds.github.io/sprig/).
