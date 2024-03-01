@@ -145,21 +145,21 @@ as well. Following an example:
 
 ```yaml
 services:
-	- gitRepoID: 1234
-	  label: service1
-	  previousVersion: 0.0.1
-	  version: 0.0.2
-	  checkVersion: '@filepath:$.versions.a'
-	  gitRepoURL: https://repo-service1-url
+  - gitRepoID: 1234
+    label: service1
+    previousVersion: 0.0.1
+    version: 0.0.2
+    checkVersion: '@filepath:$.versions.a'
+    gitRepoURL: https://repo-service1-url
     gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
-	- gitRepoID: 5678
-	  jiraComponent: jComponent # used to retrieve the known issues from jira
-	  jiraProject: jProject # used to retrieve the known issues from jira
-	  label: service2
-	  previousVersion: 1.2.0
-	  version: 1.2.1
-	  checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
-	  gitRepoURL: https://repo-service2-url/-/releases/1.2.1
+  - gitRepoID: 5678
+    jiraComponent: jComponent # used to retrieve the known issues from jira
+    jiraProject: jProject # used to retrieve the known issues from jira
+    label: service2
+    previousVersion: 1.2.0
+    version: 1.2.1
+    checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
+    gitRepoURL: https://repo-service2-url/-/releases/1.2.1
     gitReleaseURL: https://repo-service2-url/-/releases/1.2.1
 ```
 
@@ -226,8 +226,8 @@ generatedValues:
     label: service1
     previousVersion: 0.0.1
     version: 0.0.2
-	  checkVersion: '@filepath:$.versions.a'
-	  gitRepoURL: https://repo-service1-url
+    checkVersion: '@filepath:$.versions.a'
+    gitRepoURL: https://repo-service1-url
     gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
     extractedKeys:
     - category: BUG_FIX
@@ -248,7 +248,7 @@ generatedValues:
     previousVersion: 1.2.0
     version: 1.2.1
     checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
-	  gitURL: https://repo-service2-url/-/releases/1.2.1
+    gitURL: https://repo-service2-url/-/releases/1.2.1
     gitReleaseURL: https://repo-service2-url/-/releases/1.2.1
     extractedKeys:
     - category: BUG_FIX
