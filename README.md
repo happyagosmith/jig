@@ -6,6 +6,9 @@
       <a href="#about-the-project">About The Project</a>
     </li>
     <li>
+      <a href="#key-concepts-and-best-practices-for-writing-release-notes"> Key Concepts and Best Practices for Writing Release Notes</a>
+    </li>
+    <li>
       <a href="#how-jig-works">How Jig Works</a>
     </li>
     <li>
@@ -49,6 +52,40 @@ This project is built with:
 and we're always open to contributions and suggestions for improvement.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+# Key Concepts and Best Practices for Writing Release Notes
+
+## Key Concepts
+
+- **Issue**: An issue is a note that describes a task, feature, or bug related to the project. It represents the "what" of the work that needs to be done. It's a way of tracking and discussing the requirements and goals of a particular piece of work. Issues are typically used to discuss the work before it's done, and can be assigned to specific team members, categorized, and scheduled.
+
+- **Merge Request**: A merge request (also known as a pull request in some platforms) is a proposal to merge a branch into another. It represents the "how" of implementing the work described in an issue. Unlike an issue, a merge request is about discussing a specific set of proposed changes. It includes the changes themselves (in the form of commits), as well as comments and reviews about those changes. Merge requests are typically used after the work has been done, to review it and then integrate it into the project.
+
+- **Commit**: A commit is a change to a file (or set of files) in your project. It's a way of saving your work. Each commit has a unique ID that can be used to refer to that specific set of changes.
+
+- **Issue Tracker**: An issue tracker is a tool that keeps track of issues. It's a way of organizing and managing work on the project.
+
+- **Repo**: A repo (short for repository) is a location where all the files for a particular project are stored. It includes all the versions of all the files in the project, as well as the history of all changes made to them.
+
+## Writing Release Notes
+
+Creating effective release notes is crucial to provide clear and concise information about the changes in the new version of the software. Here's a guideline on what they should contain:
+
+- **Introduction**: Start with a brief summary of the product and the purpose of the release. This sets the context for the rest of the release notes.
+
+- **New Features**: Detail the new features in the release. For each feature, reference the issue it resolves and the merge request where it was implemented. This provides a clear link between the release notes and the detailed discussions and changes in the issue tracker and repo.
+
+- **Improvements**: Describe any enhancements to existing features. Again, reference the relevant issues, merge requests, or commits. This helps users understand the evolution of existing features.
+
+- **Bug Fixes**: List the bugs that have been fixed. Include references to the issues they resolve and the merge requests or commits where the fixes were implemented. This reassures users that problems have been addressed.
+
+- **Known Issues**: Mention any known issues that are still present. Reference the issues where they are tracked. This keeps users informed about ongoing problems.
+
+- **Deprecations**: Notify about any features that are being deprecated. Reference the issues, merge requests, or commits where the decision was made. This prepares users for future changes.
+
+- **Thanks**: Finally, acknowledge the people who contributed to the release. This fosters a sense of community and gives credit where it's due.
+
+Keep in mind, the purpose of release notes is to update users about the modifications in the new software version, enabling them to grasp what's been added, altered, and its impact on them. When outlining a change, refer to the issue that it addresses - the "what" - and the merge request where the change was executed - the "how". This establishes a direct connection between the release notes and the comprehensive discussions and alterations in the issue tracker and repository.
 
 # How Jig Works
 
