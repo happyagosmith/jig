@@ -1,14 +1,7 @@
-
-[![Run ci](https://github.com/happyagosmith/jig/actions/workflows/ci.yml/badge.svg)](https://github.com/happyagosmith/jig/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/happyagosmith/jig)](https://goreportcard.com/report/github.com/happyagosmith/jig)
-
 <a name="readme-top"></a>
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-    </li>
     <li>
       <a href="#key-concepts-and-best-practices-for-writing-release-notes"> Key Concepts and Best Practices for Writing Release Notes</a>
     </li>
@@ -21,9 +14,9 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#configuration">Configuration</a></li>
-        <li><a href="#running-jig-with-docker">Running Jig with Docker</a></li>
         <li><a href="#running-jig-from-command-line">Running Jig from Command Line</a></li>
+        <li><a href="#running-jig-with-docker">Running Jig with Docker</a></li>
+        <li><a href="#configuration">Configuration</a></li>
       </ul>
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -32,7 +25,14 @@
   </ol>
 </details>
 
-# About The Project
+<p align="center" style="text-align: center">
+  <h1 align="center" style="text-align: center">Jig</h1>
+  <p align="center" style="text-align: center">A release note generator tool</p>
+</p>
+
+[![Run ci](https://github.com/happyagosmith/jig/actions/workflows/ci.yml/badge.svg)](https://github.com/happyagosmith/jig/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/happyagosmith/jig)](https://goreportcard.com/report/github.com/happyagosmith/jig)
+
 The project, named "Jig", is a tool designed to automate the creation of release notes for software products composed of one or more components, each with its own Git repository. Jig leverages the information found in commit messages across these repositories and enriches it with details from the issue tracker (e.g., Jira).
 
 The primary goal of Jig is to streamline the process of generating release notes, which is often a time-consuming task. By automatically pulling data from commit messages and issue trackers, Jig ensures that all relevant changes are documented, reducing the risk of missing important information.
@@ -54,8 +54,6 @@ This project is built with:
 * [![yaml-jsonpath][yaml-jsonpath]][yaml-jsonpath]
 
 and we're always open to contributions and suggestions for improvement.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 # Key Concepts and Best Practices for Writing Release Notes
 
@@ -91,6 +89,8 @@ Creating effective release notes is crucial to provide clear and concise informa
 
 Keep in mind, the purpose of release notes is to update users about the modifications in the new software version, enabling them to grasp what's been added, altered, and its impact on them. When outlining a change, refer to the issue that it addresses - the "what" - and the merge request where the change was executed - the "how". This establishes a direct connection between the release notes and the comprehensive discussions and alterations in the issue tracker and repository.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 # How Jig Works
 
 Jig is a tool based on Go text templates. It extracts information from commit messages and issue trackers to generate release notes through the following steps:
@@ -112,12 +112,6 @@ This process can be automated, so that Jig generates the release notes every tim
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 # Install
-## Docker 
-You can create custom Docker images using the provided Dockerfile:
-```shell
-docker build -t jig:latest .
-```
-
 ## go Install
 
 First, ensure that you have a compatible version of [Go](https://go.dev/) installed and set up on your system. The minimum required version of Go can be found in the [go.mod](go.mod) file.
@@ -130,7 +124,53 @@ go install github.com/happyagosmith/jig@latest
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Docker 
+You can create custom Docker images using the provided Dockerfile:
+```shell
+docker build -t jig:latest .
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 # Getting Started
+## Running Jig from Command Line
+The simplest way to run Jig (assuming the configuration file and the model file are present) is to execute:
+```shell
+jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 
+```
+
+You might find it useful to save the release note into a file:
+```shell
+jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich -o rn.md
+```
+
+You also have the option to enrich the model.yaml file first without generating the Release Note, and then generate the Release Note at a later time:
+
+```shell
+jig --config config/.jig.yaml enrich models/model.yaml
+jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml 
+```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Running Jig with Docker
+The most straightforward way to run Jig (assuming you're in the root directory of the Git repository and the configuration file is available) is:
+
+```shell
+docker run -v ./examples:/config -v ./examples:/models --rm jig:latest --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 
+```
+
+You might find it useful to redirect the standard output to a file:
+```shell
+docker run -v ./examples:/config -v ./examples:/models --rm jig:latest --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 2>&1 | tee rn.md
+```
+
+Then, you can use the cat command to extract the lines related to the Release Note:
+
+```shell
+cat rn.md | sed -n '/\#/,$p'
+```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Configuration
 ### config.yaml
 
@@ -352,41 +392,7 @@ https://gitlab.com/api/v4/projects/12345/repository/files/xxxx/raw?ref=xxxx
 
 Please note that the `PRIVATE-TOKEN` in the request header for authentication is automatically taken from the `gitToken` flag.
 
-## Running Jig with Docker
-The most straightforward way to run Jig (assuming you're in the root directory of the Git repository and the configuration file is available) is:
-
-```shell
-docker run -v ./examples:/config -v ./examples:/models --rm jig:latest --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 
-```
-
-You might find it useful to redirect the standard output to a file:
-```shell
-docker run -v ./examples:/config -v ./examples:/models --rm jig:latest --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 2>&1 | tee rn.md
-```
-
-Then, you can use the cat command to extract the lines related to the Release Note:
-
-```shell
-cat rn.md | sed -n '/\#/,$p'
-```
-
-### Running Jig from Command Line
-The simplest way to run Jig (assuming the configuration file and the model file are present) is to execute:
-```shell
-jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 
-```
-
-You might find it useful to save the release note into a file:
-```shell
-jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich -o rn.md
-```
-
-You also have the option to enrich the model.yaml file first without generating the Release Note, and then generate the Release Note at a later time:
-
-```shell
-jig --config config/.jig.yaml enrich models/model.yaml
-jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml 
-```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 # Roadmap
 See the [open issues](https://github.com/happyagosmith/jig/issues) for a full list of proposed features (and known issues).
