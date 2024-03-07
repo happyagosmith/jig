@@ -14,9 +14,9 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#configuration">Configuration</a></li>
-        <li><a href="#running-jig-with-docker">Running Jig with Docker</a></li>
         <li><a href="#running-jig-from-command-line">Running Jig from Command Line</a></li>
+        <li><a href="#running-jig-with-docker">Running Jig with Docker</a></li>
+        <li><a href="#configuration">Configuration</a></li>
       </ul>
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
