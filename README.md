@@ -1,3 +1,7 @@
+
+[![Run ci](https://github.com/happyagosmith/jig/actions/workflows/ci.yml/badge.svg)](https://github.com/happyagosmith/jig/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/happyagosmith/jig)](https://goreportcard.com/report/github.com/happyagosmith/jig)
+
 <a name="readme-top"></a>
 <details>
   <summary>Table of Contents</summary>
