@@ -1,0 +1,124 @@
+services:
+  - label: jig-demo
+    gitRepoID: "55147809"
+    previousVersion: test
+    version: main
+generatedValues:
+  features:
+    jig-demo:
+      - issueTracker: GIT
+        category: CLOSED_FEATURE
+        issueKey: "1"
+        commitDetail:
+          summary: 'ci: Update README.md'
+          message: "ci: Update README.md\r\n\r\nthis commit is to show if it works closes #1"
+          commitID: 5f91c539669ab5d8f917e548eebd5797843f0656
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: GIT
+        category: CLOSED_FEATURE
+        issueKey: "2"
+        commitDetail:
+          summary: Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'
+          message: |-
+            Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'
+
+            Resolve "this is an issue to test the MR"
+
+            Closes #2
+
+            See merge request happyagosmith/jig-demo!1
+          commitID: 2be6a6701de7b616d1dc39da65ee562973f2fa58
+          parsedCategory: FEATURE
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+  bugs:
+    jig-demo:
+      - issueTracker: GIT
+        category: FIXED_BUG
+        issueKey: "5"
+        commitDetail:
+          summary: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix #5
+          commitID: 2fdba10e4beda96183a003c26274b0aa273bead3
+          parsedCategory: BUG_FIX
+          parsedKey: "5"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+      - issueTracker: SILK
+        category: FIXED_BUG
+        issueKey: silk-123
+        commitDetail:
+          summary: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix: silk-123
+          commitID: 237effb93be700ceec6a81fffa4a071bf6533c61
+          parsedCategory: BUG_FIX
+          parsedKey: silk-123
+          parsedIssueTracker: SILK
+          parser: closingPattern
+          parsedType: fix
+  knownIssues: {}
+  breakingChange: {}
+  gitRepos:
+    - label: jig-demo
+      gitRepoID: "55147809"
+      previousVersion: test
+      version: main
+      extractedKeys:
+        - summary: 'ci: Update README.md'
+          message: "ci: Update README.md\r\n\r\nthis commit is to show if it works closes #1"
+          commitID: 5f91c539669ab5d8f917e548eebd5797843f0656
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - summary: Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'
+          message: |-
+            Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'
+
+            Resolve "this is an issue to test the MR"
+
+            Closes #2
+
+            See merge request happyagosmith/jig-demo!1
+          commitID: 2be6a6701de7b616d1dc39da65ee562973f2fa58
+          parsedCategory: FEATURE
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - summary: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix #5
+          commitID: 2fdba10e4beda96183a003c26274b0aa273bead3
+          parsedCategory: BUG_FIX
+          parsedKey: "5"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+        - summary: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix: silk-123
+          commitID: 237effb93be700ceec6a81fffa4a071bf6533c61
+          parsedCategory: BUG_FIX
+          parsedKey: silk-123
+          parsedIssueTracker: SILK
+          parser: closingPattern
+          parsedType: fix

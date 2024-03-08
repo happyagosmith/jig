@@ -48,7 +48,8 @@ func (cct *CCType) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type ConventionalCommit struct {
-	Type       CCType
+	Type       string
+	Category   CCType
 	Scope      string
 	IsBreaking bool
 	Subject    string
@@ -56,7 +57,7 @@ type ConventionalCommit struct {
 
 const ccPattern = `^(?P<type>[^\(\:]*)(\((?P<scope>[^\)]+)\))?(?P<breaking>!)?: (?P<subject>.*)?`
 
-func NewCC() CCParser {
+func NewConventionalCommit() CCParser {
 	re := regexp.MustCompile(ccPattern)
 	gn := re.SubexpNames()
 	gnidx := map[string]int{}
@@ -97,7 +98,8 @@ func (p CCParser) Parse(commit string) *ConventionalCommit {
 	}
 
 	return &ConventionalCommit{
-		Type:       cct,
+		Type:       t,
+		Category:   cct,
 		Scope:      cc[0][p.gni["scope"]],
 		Subject:    cc[0][p.gni["subject"]],
 		IsBreaking: isBreaking,

@@ -28,7 +28,7 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 			modelPath := viper.GetString("model")
 			tplPath := args[0]
 
-			fl := NewFileLoader(viper.GetString("gitToken"))
+			fl := NewFileLoader(GetConfigString(GitToken))
 			cmd.Printf("using model file: %s\n", modelPath)
 			v, err := fl.GetFile(modelPath)
 			CheckErr(err)

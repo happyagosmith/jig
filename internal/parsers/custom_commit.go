@@ -21,7 +21,7 @@ func WithPattern(pattern string) ParserOpt {
 	}
 }
 
-func NewCustom(opts ...ParserOpt) CustomParser {
+func NewCustomCommit(opts ...ParserOpt) CustomParser {
 	p := CustomParser{}
 	for _, o := range opts {
 		o(&p)

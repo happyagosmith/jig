@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/happyagosmith/jig/internal/model"
 )
@@ -75,15 +74,15 @@ services:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := args[0]
 
-			fl := NewFileLoader(viper.GetString("gitToken"))
+			fl := NewFileLoader(GetConfigString(GitToken))
 			cmd.Printf("using model file: %s\n", modelPath)
 			b, err := fl.GetFile(modelPath)
 			CheckErr(err)
 
-			vcs, err := ConfigureVCS()
+			vcs, err := ConfigureRepoSRV()
 			CheckErr(err)
 
-			m, err := model.New(b, model.WithVCS(vcs))
+			m, err := model.New(b, model.WithRepoSRV(vcs))
 			CheckErr(err)
 
 			err = m.SetVersions(filepath.Dir(modelPath))

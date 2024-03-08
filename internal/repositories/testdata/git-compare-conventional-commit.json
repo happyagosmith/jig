@@ -5,31 +5,31 @@
     },
     "commits":[
        {
-          "id":"105f8bebea0bf65cc1189ae4fb1016f77b7585a6",
+          "id":"commit0",
           "message":"No reference \n"
        },
        {
-          "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+          "id":"commit1",
           "short_id":"82e1dd34",
           "message":"feat(j_CC-123): this is a feature tracked in jira"
        },
        {
-         "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+         "id":"commit2",
          "short_id":"82e1dd34",
          "message":"fix(j_CC-456): this is a bug fixed tracked in jira"
       },
       {
-         "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+         "id":"commit3",
          "short_id":"82e1dd34",
-         "message":"fix(j_CC-789)!: this is a breaking change"
+         "message":"fix(j_CC-789)!: this is a breaking change tracked in jira"
       },
       {
-         "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+         "id":"commit4",
          "short_id":"82e1dd34",
          "message":"fix(CC-222): this has an unknown issue tracker"
       },
       {
-         "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+         "id":"commit5",
          "short_id":"82e1dd34",
          "message":"fix: this has an unknown issue tracker and no issueKey"
       }

@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/happyagosmith/jig/internal/git"
 	"github.com/happyagosmith/jig/internal/model"
-	"github.com/happyagosmith/jig/internal/parsers"
+	git "github.com/happyagosmith/jig/internal/repositories"
+	"github.com/happyagosmith/jig/internal/trackers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -126,7 +126,7 @@ services:
     version: %s
 `, tt.repoID, tt.previousVersion, tt.version))
 
-			m, err := model.New(values, model.WithVCS(mockGitLabClient))
+			m, err := model.New(values, model.WithRepoSRV(mockGitLabClient))
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
@@ -151,31 +151,30 @@ type MockIssueTracker struct {
 	mock.Mock
 }
 
-func (m *MockIssueTracker) GetIssues(commitDetails []git.CommitDetail) ([]model.ExtractedIssue, error) {
-	args := m.Called(commitDetails)
-	return args.Get(0).([]model.ExtractedIssue), args.Error(1)
+func (m *MockIssueTracker) GetIssues(keys []string) ([]trackers.IssueDetail, error) {
+	args := m.Called(keys)
+	return args.Get(0).([]trackers.IssueDetail), args.Error(1)
 }
 
-func (m *MockIssueTracker) GetKnownIssues(project, component string) ([]model.ExtractedIssue, error) {
+func (m *MockIssueTracker) GetKnownIssues(project, component string) ([]trackers.IssueDetail, error) {
 	args := m.Called(project, component)
-	return args.Get(0).([]model.ExtractedIssue), args.Error(1)
+	return args.Get(0).([]trackers.IssueDetail), args.Error(1)
 }
 
-func (m *MockIssueTracker) Type() parsers.IssueTrackerType {
-	return parsers.JIRA
-}
 func TestEnrichWithIssueTrackers(t *testing.T) {
 	tests := []struct {
 		name            string
-		issues          []model.ExtractedIssue
-		knownIssues     []model.ExtractedIssue
+		commits         []git.CommitDetail
+		issues          []trackers.IssueDetail
+		knownIssues     []trackers.IssueDetail
 		expectedContent string
 		expectedError   error
 	}{
 		{
 			name:        "Test EnrichWithIssueTrackers no issues",
-			issues:      []model.ExtractedIssue{},
-			knownIssues: []model.ExtractedIssue{},
+			commits:     []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA"}},
+			issues:      []trackers.IssueDetail{},
+			knownIssues: []trackers.IssueDetail{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -194,21 +193,24 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      previousVersion: 0.0.0\n" +
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
-				"      jiraComponent: component\n",
+				"      jiraComponent: component\n" +
+				"      extractedKeys:\n" +
+				"        - parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n",
 			expectedError: nil,
 		},
 		{
-			name: "Test EnrichWithIssueTrackers with features",
-			issues: []model.ExtractedIssue{{
-				IssueKey:         "AAA-000",
-				IssueSummary:     "summary",
-				IssueType:        "type",
-				IssueStatus:      "status",
-				IssueTrackerType: parsers.JIRA,
-				Category:         model.CLOSED_FEATURE,
-				IsBreakingChange: false,
-			}},
-			knownIssues: []model.ExtractedIssue{},
+			name:    "Test EnrichWithIssueTrackers with features",
+			commits: []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: false}},
+			issues: []trackers.IssueDetail{{
+				IssueKey:     "AAA-000",
+				IssueSummary: "summary",
+				IssueType:    "type",
+				IssueStatus:  "status",
+				Category:     trackers.CLOSED_FEATURE,
+			},
+			},
+			knownIssues: []trackers.IssueDetail{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -219,13 +221,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"generatedValues:\n" +
 				"  features:\n" +
 				"    label1:\n" +
-				"      - issueKey: AAA-000\n" +
+				"      - issueTracker: JIRA\n" +
+				"        category: CLOSED_FEATURE\n" +
+				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
 				"        issueType: type\n" +
 				"        issueStatus: status\n" +
-				"        issueTrackerType: JIRA\n" +
-				"        category: CLOSED_FEATURE\n" +
-				"        isBreakingChange: false\n" +
+				"        commitDetail:\n" +
+				"          parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
 				"  bugs: {}\n" +
 				"  knownIssues: {}\n" +
 				"  breakingChange: {}\n" +
@@ -236,21 +240,23 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      extractedKeys:\n" +
+				"        - parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
 				"      hasNewFeature: true\n",
 			expectedError: nil,
 		},
 		{
-			name: "Test EnrichWithIssueTrackers with bug",
-			issues: []model.ExtractedIssue{{
-				IssueKey:         "AAA-000",
-				IssueSummary:     "summary",
-				IssueType:        "type",
-				IssueStatus:      "status",
-				IssueTrackerType: parsers.JIRA,
-				Category:         model.FIXED_BUG,
-				IsBreakingChange: false,
+			name:    "Test EnrichWithIssueTrackers with bug",
+			commits: []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: false}},
+			issues: []trackers.IssueDetail{{
+				IssueKey:     "AAA-000",
+				IssueSummary: "summary",
+				IssueType:    "type",
+				IssueStatus:  "status",
+				Category:     trackers.FIXED_BUG,
 			}},
-			knownIssues: []model.ExtractedIssue{},
+			knownIssues: []trackers.IssueDetail{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -262,13 +268,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  features: {}\n" +
 				"  bugs:\n" +
 				"    label1:\n" +
-				"      - issueKey: AAA-000\n" +
+				"      - issueTracker: JIRA\n" +
+				"        category: FIXED_BUG\n" +
+				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
 				"        issueType: type\n" +
 				"        issueStatus: status\n" +
-				"        issueTrackerType: JIRA\n" +
-				"        category: FIXED_BUG\n" +
-				"        isBreakingChange: false\n" +
+				"        commitDetail:\n" +
+				"          parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
 				"  knownIssues: {}\n" +
 				"  breakingChange: {}\n" +
 				"  gitRepos:\n" +
@@ -278,20 +286,21 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      extractedKeys:\n" +
+				"        - parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
 				"      hasBugFixed: true\n",
 			expectedError: nil,
 		},
 		{
 			name:   "Test EnrichWithIssueTrackers known issue",
-			issues: []model.ExtractedIssue{},
-			knownIssues: []model.ExtractedIssue{{
-				IssueKey:         "AAA-000",
-				IssueSummary:     "summary",
-				IssueType:        "type",
-				IssueStatus:      "status",
-				IssueTrackerType: parsers.JIRA,
-				Category:         model.OTHER,
-				IsBreakingChange: false,
+			issues: []trackers.IssueDetail{},
+			knownIssues: []trackers.IssueDetail{{
+				IssueKey:     "AAA-000",
+				IssueSummary: "summary",
+				IssueType:    "type",
+				IssueStatus:  "status",
+				Category:     trackers.OTHER,
 			}},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
@@ -305,13 +314,12 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  bugs: {}\n" +
 				"  knownIssues:\n" +
 				"    label1:\n" +
-				"      - issueKey: AAA-000\n" +
+				"      - issueTracker: JIRA\n" +
+				"        category: OTHER\n" +
+				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
 				"        issueType: type\n" +
 				"        issueStatus: status\n" +
-				"        issueTrackerType: JIRA\n" +
-				"        category: OTHER\n" +
-				"        isBreakingChange: false\n" +
 				"  breakingChange: {}\n" +
 				"  gitRepos:\n" +
 				"    - label: label1\n" +
@@ -323,17 +331,16 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name: "Test EnrichWithIssueTrackers with breaking change",
-			issues: []model.ExtractedIssue{{
-				IssueKey:         "AAA-000",
-				IssueSummary:     "summary",
-				IssueType:        "type",
-				IssueStatus:      "status",
-				IssueTrackerType: parsers.JIRA,
-				Category:         model.CLOSED_FEATURE,
-				IsBreakingChange: true,
+			name:    "Test EnrichWithIssueTrackers with breaking change",
+			commits: []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: true}},
+			issues: []trackers.IssueDetail{{
+				IssueKey:     "AAA-000",
+				IssueSummary: "summary",
+				IssueType:    "type",
+				IssueStatus:  "status",
+				Category:     trackers.CLOSED_FEATURE,
 			}},
-			knownIssues: []model.ExtractedIssue{},
+			knownIssues: []trackers.IssueDetail{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -344,24 +351,30 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"generatedValues:\n" +
 				"  features:\n" +
 				"    label1:\n" +
-				"      - issueKey: AAA-000\n" +
+				"      - issueTracker: JIRA\n" +
+				"        category: CLOSED_FEATURE\n" +
+				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
 				"        issueType: type\n" +
 				"        issueStatus: status\n" +
-				"        issueTrackerType: JIRA\n" +
-				"        category: CLOSED_FEATURE\n" +
-				"        isBreakingChange: true\n" +
+				"        commitDetail:\n" +
+				"          parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
+				"          isBreakingChange: true\n" +
 				"  bugs: {}\n" +
 				"  knownIssues: {}\n" +
 				"  breakingChange:\n" +
 				"    label1:\n" +
-				"      - issueKey: AAA-000\n" +
+				"      - issueTracker: JIRA\n" +
+				"        category: CLOSED_FEATURE\n" +
+				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
 				"        issueType: type\n" +
 				"        issueStatus: status\n" +
-				"        issueTrackerType: JIRA\n" +
-				"        category: CLOSED_FEATURE\n" +
-				"        isBreakingChange: true\n" +
+				"        commitDetail:\n" +
+				"          parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
+				"          isBreakingChange: true\n" +
 				"  gitRepos:\n" +
 				"    - label: label1\n" +
 				"      gitRepoID: repoID\n" +
@@ -369,6 +382,10 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      extractedKeys:\n" +
+				"        - parsedKey: AAA-000\n" +
+				"          parsedIssueTracker: JIRA\n" +
+				"          isBreakingChange: true\n" +
 				"      hasBreaking: true\n" +
 				"      hasNewFeature: true\n",
 			expectedError: nil,
@@ -380,7 +397,7 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 			mockGitLabClient := new(MockGitLabClient)
 			mockIssueTracker := new(MockIssueTracker)
 
-			mockGitLabClient.On("ExtractCommits", "repoID", "0.0.0", "1.0.0").Return([]git.CommitDetail{}, nil)
+			mockGitLabClient.On("ExtractCommits", "repoID", "0.0.0", "1.0.0").Return(tt.commits, nil)
 			mockIssueTracker.On("GetIssues", mock.Anything).Return(tt.issues, nil)
 			mockIssueTracker.On("GetKnownIssues", "project", "component").Return(tt.knownIssues, nil)
 
@@ -392,7 +409,7 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n")
-			m, err := model.New(values, model.WithVCS(mockGitLabClient), model.WithIssueTracker(mockIssueTracker))
+			m, err := model.New(values, model.WithRepoSRV(mockGitLabClient), model.WithIssueTracker("JIRA", mockIssueTracker))
 			assert.NoError(t, err)
 
 			assert.Equal(t, tt.expectedError, err)

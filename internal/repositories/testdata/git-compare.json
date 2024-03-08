@@ -5,21 +5,21 @@
     },
     "commits":[
        {
-          "id":"105f8bebea0bf65cc1189ae4fb1016f77b7585a6",
+          "id":"commit0",
           "message":"No reference \n"
        },
        {
-          "id":"82e1dd3405476f657dca7aea451c130e7e49c71e",
+          "id":"commit1",
           "short_id":"82e1dd34",
           "message":"[AAA-1234] With reference\n"
        },
        {
-          "id":"74e8b5af13267cb7bf71af3df87b8cc49c82ffff",
+          "id":"commit2",
           "short_id":"74e8b5af",
           "message":"[AAA-1234] Repeated reference\n"
        },
        {
-          "id":"74e8b5af13267cb7bf71af3df87b8cc49c82ffff",
+          "id":"commit3",
           "short_id":"74e8b5af",
           "message":"[AAA-5678] Different reference\n"
        }

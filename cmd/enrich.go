@@ -4,90 +4,22 @@ Copyright © 2023 Happy Smith happyagosmith@gmail.com
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
-	"github.com/happyagosmith/jig/internal/git"
 	"github.com/happyagosmith/jig/internal/model"
-	"github.com/happyagosmith/jig/internal/trackers"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
-
-func addJiraOpt(label string, value string, opts *[]trackers.JiraOpt, opt func(string, string) trackers.JiraOpt) {
-	fmt.Printf("using %s -> %s\n", label, value)
-	filters := strings.Split(value, ",")
-	if len(filters) == 0 {
-		CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
-	}
-	for _, cff := range filters {
-		f := strings.Split(cff, ":")
-		if len(f) != 2 {
-			CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
-		}
-		*opts = append(*opts, opt(f[0], f[1]))
-	}
-}
-
-func ConfigureJira() trackers.Jira {
-	jiraURL := viper.GetString("jiraURL")
-	jiraUsername := viper.GetString("jiraUsername")
-	jiraPassword := viper.GetString("jiraPassword")
-
-	if jiraURL == "" || jiraUsername == "" || jiraPassword == "" {
-		CheckErr(fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required"))
-	}
-
-	var opts []trackers.JiraOpt
-	addJiraOpt("jiraClosedFeatureFilter", viper.GetString("jiraClosedFeatureFilter"), &opts, trackers.WithClosedFeatureFilter)
-	addJiraOpt("jiraFixedBugFilter", viper.GetString("jiraFixedBugFilter"), &opts, trackers.WithFixedBugFilter)
-	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", viper.GetString("jiraKnownIssuesJQL"))
-	fmt.Printf("using %s -> %s\n", "jiraURL", viper.GetString("jiraURL"))
-
-	opts = append(opts, trackers.WithKnownIssueJql(viper.GetString("jiraKnownIssuesJQL")))
-	jiraTracker, err := trackers.NewJira(
-		viper.GetString("jiraURL"),
-		viper.GetString("jiraUsername"),
-		viper.GetString("jiraPassword"),
-		opts...,
-	)
-	CheckErr(err)
-
-	return jiraTracker
-}
-
-func ConfigureVCS() (model.VCS, error) {
-	gitURL := viper.GetString("gitURL")
-	gitToken := viper.GetString("gitToken")
-	issuePattern := viper.GetString("issuePattern")
-	customCommitPattern := viper.GetString("customCommitPattern")
-	withCCWithoutScope := viper.GetBool("withCCWithoutScope")
-
-	if gitURL == "" || gitToken == "" {
-		CheckErr(fmt.Errorf("gitURL and gitToken are required"))
-	}
-	fmt.Printf("using %s -> %s\n", "gitURL", gitURL)
-	fmt.Printf("using %s -> %s\n", "issuePattern", issuePattern)
-	fmt.Printf("using %s -> %s\n", "customCommitPattern", customCommitPattern)
-	fmt.Printf("using %s -> %v\n", "withCCWithoutScope", withCCWithoutScope)
-
-	git, err := git.NewClient(gitURL, gitToken, issuePattern, git.WithCustomPattern(customCommitPattern), git.WithKeepCCWithoutScope(withCCWithoutScope))
-	if err != nil {
-		return nil, err
-	}
-	CheckErr(err)
-
-	return git, nil
-}
 
 func EnrichModel(b []byte) []byte {
 	jiraTracker := ConfigureJira()
-	vcs, err := ConfigureVCS()
+	repoSRV, err := ConfigureRepoSRV()
 	CheckErr(err)
 
-	model, err := model.New(b, model.WithVCS(vcs),
-		model.WithIssueTracker(jiraTracker))
+	model, err := model.New(b, model.WithRepoSRV(repoSRV),
+		model.WithIssueTracker("JIRA", jiraTracker),
+		model.WithIssueTracker("GIT", nil),
+		model.WithIssueTracker("SILK", nil),
+	)
 	CheckErr(err)
 
 	err = model.EnrichWithGit()
@@ -205,7 +137,7 @@ generatedValues:
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := args[0]
-			fl := NewFileLoader(viper.GetString("gitToken"))
+			fl := NewFileLoader(GetConfigString(GitToken))
 
 			cmd.Printf("using model file: %s\n", modelPath)
 			v, err := fl.GetFile(modelPath)

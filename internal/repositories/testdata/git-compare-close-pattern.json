@@ -1,0 +1,30 @@
+{
+    "commit":{
+       "id":"2be6a6701de7b616d1dc39da65ee562973f2fa58",
+       "message":"Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'\n\nResolve \"this is an issue to test the MR\"\n\nCloses #2\n\nSee merge request happyagosmith/jig-demo!1",
+       "web_url":"https://gitlab.com/-/commit/2be6a6701de7b616d1dc39da65ee562973f2fa58"
+    },
+    "commits":[
+       {
+          "id":"commit0",
+          "short_id":"5f91c539",
+          "title":"ci: Update README.md",
+          "message":"ci: Update README.md\n\nthis commit is to show if it works closes #1",
+          "web_url":"https://gitlab.com/-/commit/5f91c539669ab5d8f917e548eebd5797843f0656"
+       },
+       {
+          "id":"commit1",
+          "short_id":"a1b340e2",
+          "title":"doc: Update README.md",
+          "message":"doc: Update README.md",
+          "web_url":"https://gitlab.com/-/commit/a1b340e24cccc0e33c8b35945fbeef0efb2b9e42"
+       },
+       {
+          "id":"commit2",
+          "short_id":"2be6a670",
+          "title":"Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'",
+          "message":"Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'\n\nResolve \"this is an issue to test the MR\"\n\nCloses #2\n\nSee merge request demo!1",
+          "web_url":"https://gitlab.com/-/commit/2be6a6701de7b616d1dc39da65ee562973f2fa58"
+       }
+    ]
+ }

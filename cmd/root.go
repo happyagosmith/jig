@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+
 
 var rootCmd = &cobra.Command{
 	Use:   "jig",
@@ -64,41 +64,7 @@ func Execute(version string) {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jig.yaml)")
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.PersistentFlags().String("issuePattern", `(^j_(?P<jira_1>.*)$)|(?P<jira_2>^[^\_]+$)`, "Pattern to apply on the git commit message to extract the issue keys from the message. The pattern should include the named groups composed by noun with number (e.g. jira_1). The noun refers to the issue tracker (at the moment only jira is supported). The number has the purpose to define more than one pattern for the same issue tracker (this is usefull if the commit message format is changed over the time). The pattern must be a valid regex pattern.")
-	viper.BindPFlag("issuePattern", rootCmd.PersistentFlags().Lookup("issuePattern"))
-
-	rootCmd.PersistentFlags().Bool("withCCWithoutScope", false, "if true, extract conventional commit without scope")
-	viper.BindPFlag("withCCWithoutScope", rootCmd.PersistentFlags().Lookup("withCCWithoutScope"))
-
-	rootCmd.PersistentFlags().String("customCommitPattern", `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the git commit message to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
-	viper.BindPFlag("customCommitPattern", rootCmd.PersistentFlags().Lookup("customCommitPattern"))
-
-	rootCmd.PersistentFlags().String("gitURL", "", "Git base URL")
-	viper.BindPFlag("gitURL", rootCmd.PersistentFlags().Lookup("gitURL"))
-
-	rootCmd.PersistentFlags().String("gitToken", "", "Git token with read REST API permissions")
-	viper.BindPFlag("gitToken", rootCmd.PersistentFlags().Lookup("gitToken"))
-
-	rootCmd.PersistentFlags().String("jiraURL", "", "Jira base URL")
-	viper.BindPFlag("jiraURL", rootCmd.PersistentFlags().Lookup("jiraURL"))
-
-	rootCmd.PersistentFlags().String("jiraUsername", "", "Jira username with read REST API permissions")
-	viper.BindPFlag("jiraUsername", rootCmd.PersistentFlags().Lookup("jiraUsername"))
-
-	rootCmd.PersistentFlags().String("jiraPassword", "", "Jira password/token with read REST API permissions")
-	viper.BindPFlag("jiraPassword", rootCmd.PersistentFlags().Lookup("jiraPassword"))
-
-	rootCmd.PersistentFlags().String("jiraClosedFeatureFilter", "Story:GOLIVE,TECH TASK:Completata", "List of filters type:status that identify the closed features")
-	viper.BindPFlag("jiraClosedFeatureFilter", rootCmd.PersistentFlags().Lookup("jiraClosedFeatureFilter"))
-
-	rootCmd.PersistentFlags().String("jiraFixedBugFilter", "BUG:FIXED,BUG:RELEASED", "List of filters type:status that identify the fixed bugs")
-	viper.BindPFlag("jiraFixedBugFilter", rootCmd.PersistentFlags().Lookup("jiraFixedBugFilter"))
-
-	rootCmd.PersistentFlags().String("jiraKnownIssuesJQL", "status not in (Done, RELEASED, Fixed, GOLIVE, Cancelled) AND issuetype in (Bug, \"TECH DEBT\")", "Jira JQL to retrieve the known issues")
-	viper.BindPFlag("jiraKnownIssuesJQL", rootCmd.PersistentFlags().Lookup("jiraKnownIssuesJQL"))
+	InitConfiguration()
 
 	rootCmd.AddCommand(newEnrichCmd())
 	rootCmd.AddCommand(newGenerateCmd())

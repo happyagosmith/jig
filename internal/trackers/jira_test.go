@@ -6,9 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/happyagosmith/jig/internal/git"
-	"github.com/happyagosmith/jig/internal/model"
-	"github.com/happyagosmith/jig/internal/parsers"
 	"github.com/happyagosmith/jig/internal/trackers"
 	"github.com/stretchr/testify/assert"
 )
@@ -86,7 +83,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues([]git.CommitDetail{{IssueKey: "test"}})
+		i, err := jira.GetIssues([]string{})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, len(i) == 0)
@@ -100,21 +97,21 @@ func TestJira(t *testing.T) {
 		defer srv.Close()
 
 		jira, err := trackers.NewJira(srv.URL, "jiraUsername", "jiraPassword",
-			trackers.WithClosedFeatureFilter("STORY", "GOLIVE"),
+			//trackers.WithClosedFeatureFilter("STORY", "GOLIVE"),
 			trackers.WithClosedFeatureFilter("TECH TASK", "Completata"),
 			trackers.WithFixedBugFilter("BUG", "FIXED"),
 			trackers.WithFixedBugFilter("BUG", "RELEASED"),
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues([]git.CommitDetail{{IssueKey: "test", IssueTracker: parsers.JIRA}})
+		i, err := jira.GetIssues([]string{"test"})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
-		assert.True(t, i[0].Category == model.CLOSED_FEATURE)
-		assert.True(t, i[1].Category == model.CLOSED_FEATURE)
-		assert.True(t, i[2].Category == model.FIXED_BUG)
-		assert.True(t, i[3].Category == model.FIXED_BUG)
-		assert.True(t, i[4].Category == model.SUB_TASK)
+		assert.True(t, i[0].Category == trackers.OTHER)
+		assert.True(t, i[1].Category == trackers.CLOSED_FEATURE)
+		assert.True(t, i[2].Category == trackers.FIXED_BUG)
+		assert.True(t, i[3].Category == trackers.FIXED_BUG)
+		assert.True(t, i[4].Category == trackers.SUB_TASK)
 	})
 
 	t.Run("test jira GetIssues with subtask", func(t *testing.T) {
@@ -133,7 +130,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues([]git.CommitDetail{{IssueKey: "test", IssueTracker: parsers.JIRA}})
+		i, err := jira.GetIssues([]string{"test"})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, len(i) == 2)
@@ -155,12 +152,11 @@ func TestJira(t *testing.T) {
 		issues, err := j.GetKnownIssues("TEST", "")
 		assert.NoError(t, err, "GetIssues error must be nil")
 		assert.Equal(t, 5, len(issues))
-		assert.Equal(t, model.CLOSED_FEATURE, issues[0].Category)
+		assert.Equal(t, trackers.CLOSED_FEATURE, issues[0].Category)
 		assert.Equal(t, "AAA-0", issues[0].IssueKey)
 		assert.Equal(t, "this is a story", issues[0].IssueSummary)
 		assert.Equal(t, "Story", issues[0].IssueType)
 		assert.Equal(t, "GOLIVE", issues[0].IssueStatus)
-		assert.Equal(t, parsers.JIRA, issues[0].IssueTrackerType)
 	})
 
 	t.Run("test api error", func(t *testing.T) {
@@ -172,7 +168,7 @@ func TestJira(t *testing.T) {
 		jira, err := trackers.NewJira(srv.URL, "jiraUsername", "jiraPassword")
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		_, err = jira.GetIssues([]git.CommitDetail{{IssueKey: "test", IssueTracker: parsers.JIRA}})
+		_, err = jira.GetIssues([]string{"test"})
 		assert.NotNil(t, err, "GetIssues should return error")
 	})
 

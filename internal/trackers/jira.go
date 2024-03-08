@@ -5,9 +5,6 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/happyagosmith/jig/internal/git"
-	"github.com/happyagosmith/jig/internal/model"
-	"github.com/happyagosmith/jig/internal/parsers"
 )
 
 type jiraFilter struct {
@@ -20,7 +17,6 @@ type Jira struct {
 	closedFeatureFilters []jiraFilter
 	fixedBugFilters      []jiraFilter
 	jqlKnownIssue        string
-	itp                  parsers.IssueTrackerType
 }
 
 type JiraOpt func(*Jira)
@@ -54,7 +50,7 @@ func NewJira(URL, username, password string, opts ...JiraOpt) (Jira, error) {
 		return Jira{}, err
 	}
 
-	j := Jira{client: client, itp: parsers.JIRA}
+	j := Jira{client: client}
 	for _, o := range opts {
 		o(&j)
 	}
@@ -62,28 +58,9 @@ func NewJira(URL, username, password string, opts ...JiraOpt) (Jira, error) {
 	return j, nil
 }
 
-func (j Jira) Type() parsers.IssueTrackerType {
-	return parsers.JIRA
-}
-
-func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) {
-	if len(gds) == 0 {
-		return []model.ExtractedIssue{}, nil
-	}
-
-	keys := []string{}
-	breakingChange := map[string]bool{}
-	for _, gc := range gds {
-		if gc.IssueTracker != parsers.JIRA {
-			continue
-		}
-
-		keys = append(keys, gc.IssueKey)
-		breakingChange[gc.IssueKey] = gc.IsBreaking
-	}
-
+func (j Jira) GetIssues(keys []string) ([]IssueDetail, error) {
 	if len(keys) == 0 {
-		return []model.ExtractedIssue{}, nil
+		return []IssueDetail{}, nil
 	}
 
 	jql := fmt.Sprintf("issue in (%s)", strings.Join(keys, ","))
@@ -97,7 +74,7 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 		return nil, err
 	}
 
-	issues := make([]model.ExtractedIssue, 0, len(jissues))
+	issues := make([]IssueDetail, 0, len(jissues))
 	isPresent := map[string]bool{}
 
 	subTaskParents := []string{}
@@ -110,17 +87,15 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 		if issue.Fields.Type.Subtask && parent != nil && parent.Key != "" && !isPresent[parent.Key] {
 			fmt.Printf("issue %s is a subtask. add parent key %s instead\n", issue.Key, parent.Key)
 			subTaskParents = append(subTaskParents, parent.Key)
-			breakingChange[parent.Key] = breakingChange[issue.Key]
 			continue
 		}
-		issues = append(issues, model.ExtractedIssue{
-			Category:         j.extractIssueCategory(issue),
-			IssueKey:         issue.Key,
-			IssueSummary:     issue.Fields.Summary,
-			IssueType:        issue.Fields.Type.Name,
-			IssueStatus:      issue.Fields.Status.Name,
-			IssueTrackerType: j.itp,
-			IsBreakingChange: breakingChange[issue.Key]})
+		issues = append(issues, IssueDetail{
+			Category:     j.extractIssueCategory(issue),
+			IssueKey:     issue.Key,
+			IssueSummary: issue.Fields.Summary,
+			IssueType:    issue.Fields.Type.Name,
+			IssueStatus:  issue.Fields.Status.Name,
+		})
 	}
 	if len(subTaskParents) == 0 {
 		return issues, nil
@@ -138,39 +113,38 @@ func (j Jira) GetIssues(gds []git.CommitDetail) ([]model.ExtractedIssue, error) 
 			continue
 		}
 		isPresent[issue.Key] = true
-		issues = append(issues, model.ExtractedIssue{
-			Category:         j.extractIssueCategory(issue),
-			IssueKey:         issue.Key,
-			IssueSummary:     issue.Fields.Summary,
-			IssueType:        issue.Fields.Type.Name,
-			IssueStatus:      issue.Fields.Status.Name,
-			IssueTrackerType: j.itp,
-			IsBreakingChange: breakingChange[issue.Key]})
+		issues = append(issues, IssueDetail{
+			Category:     j.extractIssueCategory(issue),
+			IssueKey:     issue.Key,
+			IssueSummary: issue.Fields.Summary,
+			IssueType:    issue.Fields.Type.Name,
+			IssueStatus:  issue.Fields.Status.Name,
+		})
 	}
 	return issues, nil
 }
 
-func (j Jira) extractIssueCategory(ji jira.Issue) model.CategoryType {
+func (j Jira) extractIssueCategory(ji jira.Issue) CategoryType {
 	if ji.Fields.Type.Subtask {
-		return model.SUB_TASK
+		return SUB_TASK
 	}
 	issueType := strings.ToUpper(ji.Fields.Type.Name)
 	issueStatus := strings.ToUpper(ji.Fields.Status.Name)
 	for _, jf := range j.closedFeatureFilters {
 		if issueType == jf.issueType && issueStatus == jf.issueStatus {
-			return model.CLOSED_FEATURE
+			return CLOSED_FEATURE
 		}
 	}
 	for _, jf := range j.fixedBugFilters {
 		if issueType == jf.issueType && issueStatus == jf.issueStatus {
-			return model.FIXED_BUG
+			return FIXED_BUG
 		}
 	}
 
-	return model.OTHER
+	return OTHER
 }
 
-func (j Jira) GetKnownIssues(project, component string) ([]model.ExtractedIssue, error) {
+func (j Jira) GetKnownIssues(project, component string) ([]IssueDetail, error) {
 	opt := &jira.SearchOptions{
 		MaxResults: 1000,
 		StartAt:    0,
@@ -199,15 +173,15 @@ func (j Jira) GetKnownIssues(project, component string) ([]model.ExtractedIssue,
 		return nil, err
 	}
 
-	issues := make([]model.ExtractedIssue, 0, len(jIssues))
+	issues := make([]IssueDetail, 0, len(jIssues))
 	for _, issue := range jIssues {
-		issues = append(issues, model.ExtractedIssue{
-			Category:         j.extractIssueCategory(issue),
-			IssueKey:         issue.Key,
-			IssueSummary:     issue.Fields.Summary,
-			IssueType:        issue.Fields.Type.Name,
-			IssueStatus:      issue.Fields.Status.Name,
-			IssueTrackerType: j.itp})
+		issues = append(issues, IssueDetail{
+			Category:     j.extractIssueCategory(issue),
+			IssueKey:     issue.Key,
+			IssueSummary: issue.Fields.Summary,
+			IssueType:    issue.Fields.Type.Name,
+			IssueStatus:  issue.Fields.Status.Name,
+		})
 	}
 	return issues, nil
 }
