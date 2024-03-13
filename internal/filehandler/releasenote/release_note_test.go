@@ -1,11 +1,11 @@
-package releaseNote_test
+package releasenote_test
 
 import (
 	"bytes"
 	"os"
 	"testing"
 
-	releaseNote "github.com/happyagosmith/jig/internal/releasenote"
+	releaseNote "github.com/happyagosmith/jig/internal/filehandler/releasenote"
 	"gopkg.in/yaml.v2"
 )
 

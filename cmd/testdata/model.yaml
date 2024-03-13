@@ -1,0 +1,5 @@
+services:
+  - label: jig-test
+    gitRepoID: "123"
+    previousVersion: 0.0.1
+    version: 0.0.2

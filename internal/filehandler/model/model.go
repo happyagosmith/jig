@@ -7,82 +7,55 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/happyagosmith/jig/internal/parsers"
-	git "github.com/happyagosmith/jig/internal/repositories"
-	"github.com/happyagosmith/jig/internal/trackers"
-	"github.com/happyagosmith/jig/internal/utils"
+	"github.com/happyagosmith/jig/internal/entities"
+	yamlfile "github.com/happyagosmith/jig/internal/filehandler/yaml"
 	"gopkg.in/yaml.v2"
 )
 
-type Repo struct {
-	Label         string             `yaml:"label,omitempty"`
-	ServiceName   string             `yaml:"serviceName,omitempty"`
-	ID            string             `yaml:"gitRepoID,omitempty"`
-	FromTag       string             `yaml:"previousVersion,omitempty"`
-	ToTag         string             `yaml:"version,omitempty"`
-	CheckTag      string             `yaml:"checkVersion,omitempty"`
-	GitRepoURL    string             `yaml:"gitRepoURL,omitempty"`
-	GitReleaseURL string             `yaml:"gitReleaseURL,omitempty"`
-	Project       string             `yaml:"jiraProject,omitempty"`
-	Component     string             `yaml:"jiraComponent,omitempty"`
-	CommitDetails []git.CommitDetail `yaml:"extractedKeys,omitempty"`
-	HasBreaking   bool               `yaml:"hasBreaking,omitempty"`
-	HasNewFeature bool               `yaml:"hasNewFeature,omitempty"`
-	HasBugFixed   bool               `yaml:"hasBugFixed,omitempty"`
-}
-
-type ExtractedIssue struct {
-	IssueTracker         string `yaml:"issueTracker"`
-	trackers.IssueDetail `yaml:",inline"`
-	git.CommitDetail     `yaml:"commitDetail,omitempty"`
-}
-
-func (i ExtractedIssue) String() string {
-
-	return fmt.Sprintf("key %s, issue type %s", i.IssueDetail.IssueKey, i.IssueDetail.Category)
-}
-
 type GeneratedValues struct {
-	Features       map[string][]ExtractedIssue `yaml:"features"`
-	Bugs           map[string][]ExtractedIssue `yaml:"bugs"`
-	KnownIssues    map[string][]ExtractedIssue `yaml:"knownIssues"`
-	BreakingChange map[string][]ExtractedIssue `yaml:"breakingChange"`
-	GitRepos       []Repo                      `yaml:"gitRepos"`
+	Features       map[string][]entities.ExtractedIssue `yaml:"features"`
+	Bugs           map[string][]entities.ExtractedIssue `yaml:"bugs"`
+	KnownIssues    map[string][]entities.ExtractedIssue `yaml:"knownIssues"`
+	BreakingChange map[string][]entities.ExtractedIssue `yaml:"breakingChange"`
+	GitRepos       []entities.Repo                      `yaml:"gitRepos"`
 }
 
 type Model struct {
 	GValues       *GeneratedValues `yaml:"generatedValues,omitempty"`
-	GitRepos      []Repo           `yaml:"services"`
+	GitRepos      []entities.Repo  `yaml:"services"`
 	issueTrackers []struct {
 		label string
-		it    IssuesTracker
+		it    entities.IssuesTracker
 	}
-	repoSRV RepoSRV
-	y       *utils.Yaml
+	repoparser entities.Repoparser
+	repoclient entities.Repoclient
+	y          *yamlfile.Yaml
 }
 
 type ModelOpt func(*Model)
 
-type RepoSRV interface {
-	ExtractCommits(id, from, to string) ([]git.CommitDetail, error)
-	GetReleaseURL(id, tag string) (string, error)
-	GetRepoURL(id string) (string, error)
-}
-
-func WithRepoSRV(repoSRV RepoSRV) ModelOpt {
+func WithRepoParser(repoparser entities.Repoparser) ModelOpt {
 	return func(m *Model) {
-		if repoSRV != nil {
-			m.repoSRV = repoSRV
+		if repoparser != nil {
+			m.repoparser = repoparser
 		}
 	}
 }
 
-func WithIssueTracker(label string, it IssuesTracker) ModelOpt {
+func WithRepoClient(repoclient entities.Repoclient) ModelOpt {
+	return func(m *Model) {
+		if repoclient != nil {
+			m.repoclient = repoclient
+		}
+	}
+}
+
+func WithIssueTracker(label string, it entities.IssuesTracker) ModelOpt {
 	return func(m *Model) {
 		if label != "" {
 			m.issueTrackers = append(m.issueTrackers, struct {
 				label string
-				it    IssuesTracker
+				it    entities.IssuesTracker
 			}{it: it, label: label})
 		}
 	}
@@ -96,7 +69,7 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 	}
 	m.GValues = nil
 
-	yaml, err := utils.NewYaml(values)
+	yaml, err := yamlfile.NewYaml(values)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -114,7 +87,7 @@ func New(values []byte, opts ...ModelOpt) (*Model, error) {
 	return &m, nil
 }
 
-func (m *Model) SetVersions(rootPath string) error {
+func (m *Model) UpdateWithReposVersions(rootPath string) error {
 	for i, repo := range m.GitRepos {
 		if !strings.HasPrefix(repo.CheckTag, "@") {
 			continue
@@ -135,7 +108,7 @@ func (m *Model) SetVersions(rootPath string) error {
 			return err
 		}
 
-		y, err := utils.NewYaml(dataYaml)
+		y, err := yamlfile.NewYaml(dataYaml)
 		if err != nil {
 			return err
 		}
@@ -158,18 +131,18 @@ func (m *Model) SetVersions(rootPath string) error {
 	return nil
 }
 
-func (m *Model) SetReposInfos() error {
-	if m.repoSRV == nil {
+func (m *Model) UpdateWithReposInfos() error {
+	if m.repoclient == nil {
 		return fmt.Errorf("vcs not set")
 	}
 	for i, repo := range m.GitRepos {
 
-		rUrl, err := m.repoSRV.GetRepoURL(repo.ID)
+		rUrl, err := m.repoclient.GetRepoURL(repo.ID)
 		if err != nil {
 			return err
 		}
 
-		vUrl, err := m.repoSRV.GetReleaseURL(repo.ID, repo.ToTag)
+		vUrl, err := m.repoclient.GetReleaseURL(repo.ID, repo.ToTag)
 		if err != nil {
 			return err
 		}
@@ -181,7 +154,7 @@ func (m *Model) SetReposInfos() error {
 	return nil
 }
 
-func (m *Model) EnrichWithGit() error {
+func (m *Model) EnrichWithRepos() error {
 	if len(m.GitRepos) == 0 {
 		fmt.Printf("no git repos to process\n")
 		return nil
@@ -189,13 +162,13 @@ func (m *Model) EnrichWithGit() error {
 
 	if m.GValues == nil {
 		m.GValues = &GeneratedValues{}
-		m.GValues.Features = map[string][]ExtractedIssue{}
-		m.GValues.Bugs = map[string][]ExtractedIssue{}
-		m.GValues.KnownIssues = map[string][]ExtractedIssue{}
-		m.GValues.BreakingChange = map[string][]ExtractedIssue{}
+		m.GValues.Features = map[string][]entities.ExtractedIssue{}
+		m.GValues.Bugs = map[string][]entities.ExtractedIssue{}
+		m.GValues.KnownIssues = map[string][]entities.ExtractedIssue{}
+		m.GValues.BreakingChange = map[string][]entities.ExtractedIssue{}
 	}
 
-	m.GValues.GitRepos = []Repo{}
+	m.GValues.GitRepos = []entities.Repo{}
 	for _, repo := range m.GitRepos {
 		if repo.FromTag != "" && repo.FromTag == repo.ToTag {
 			fmt.Printf("same tag %s set in repo.FromTag and repo.ToTag for repo %s. Nothing changed \n", repo.FromTag, repo.Label)
@@ -207,30 +180,30 @@ func (m *Model) EnrichWithGit() error {
 
 		fmt.Printf("\nprocessing repo \"%s\" from \"%s\" to \"%s\"\n", repo.Label, fc, tc)
 
-		cds, err := m.repoSRV.ExtractCommits(repo.ID, fc, tc)
+		commits, err := m.repoclient.GetCommits(repo.ID, fc, tc)
 		if err != nil {
 			return err
 		}
 
-		m.addCommitDetails(repo, cds)
+		pcommits, err := m.repoparser.Parse(commits)
+		if err != nil {
+			return err
+		}
+
+		m.addParsedCommits(repo, pcommits)
 	}
 
 	return nil
-}
-
-type IssuesTracker interface {
-	GetIssues(cds []string) ([]trackers.IssueDetail, error)
-	GetKnownIssues(project, component string) ([]trackers.IssueDetail, error)
 }
 
 func (m *Model) EnrichWithIssueTrackers() error {
 	if m.GValues == nil {
 		m.GValues = &GeneratedValues{}
 	}
-	m.GValues.Features = map[string][]ExtractedIssue{}
-	m.GValues.Bugs = map[string][]ExtractedIssue{}
-	m.GValues.KnownIssues = map[string][]ExtractedIssue{}
-	m.GValues.BreakingChange = map[string][]ExtractedIssue{}
+	m.GValues.Features = map[string][]entities.ExtractedIssue{}
+	m.GValues.Bugs = map[string][]entities.ExtractedIssue{}
+	m.GValues.KnownIssues = map[string][]entities.ExtractedIssue{}
+	m.GValues.BreakingChange = map[string][]entities.ExtractedIssue{}
 
 	for i := range m.GValues.GitRepos {
 		repo := &m.GValues.GitRepos[i]
@@ -246,12 +219,12 @@ func (m *Model) EnrichWithIssueTrackers() error {
 	return nil
 }
 
-func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
+func (m *Model) enrichRepoWithIssueTracker(repo *entities.Repo) error {
 	for _, issuesTracker := range m.issueTrackers {
 		keys := []string{}
-		commits := map[string]git.CommitDetail{}
+		commits := map[string]entities.ParsedCommit{}
 
-		for _, gc := range repo.CommitDetails {
+		for _, gc := range repo.ParsedCommits {
 			if gc.ParsedIssueTracker != issuesTracker.label {
 				continue
 			}
@@ -269,16 +242,16 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 
 		if len(keys) != 0 {
 			fmt.Printf("\nretrieving issues info from the issues tracker \"%s\" for the repo \"%s\"\n", issuesTracker.label, repo.Label)
-			issues, err := issuesTracker.it.GetIssues(keys)
+			issues, err := issuesTracker.it.GetIssues(repo, keys)
 			if err != nil {
 				return err
 			}
-			extractedIssues := make([]ExtractedIssue, 0, len(issues))
+			extractedIssues := make([]entities.ExtractedIssue, 0, len(issues))
 			for _, issue := range issues {
-				extractedIssues = append(extractedIssues, ExtractedIssue{
+				extractedIssues = append(extractedIssues, entities.ExtractedIssue{
 					IssueTracker: issuesTracker.label,
-					IssueDetail:  issue,
-					CommitDetail: commits[issue.IssueKey],
+					Issue:        issue,
+					ParsedCommit: commits[issue.IssueKey],
 				})
 			}
 			hasBreaking, hasNewFeature, hasBugFixed := m.addFoundIssues(repo.Label, extractedIssues)
@@ -292,7 +265,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 			continue
 		}
 
-		knownIssues, err := issuesTracker.it.GetKnownIssues(repo.Project, repo.Component)
+		knownIssues, err := issuesTracker.it.GetKnownIssues(repo)
 		if err != nil {
 			return err
 		}
@@ -303,27 +276,27 @@ func (m *Model) enrichRepoWithIssueTracker(repo *Repo) error {
 	return nil
 }
 
-func (m *Model) addFoundIssues(label string, issues []ExtractedIssue) (bool, bool, bool) {
+func (m *Model) addFoundIssues(label string, issues []entities.ExtractedIssue) (bool, bool, bool) {
 	var hasBreaking, hasNewFeature, hasBugFixed bool
 
 	for _, issue := range issues {
 		fmt.Printf("analysing %s\n", issue.String())
-		if issue.IssueDetail.Category == trackers.SUB_TASK {
+		if issue.Issue.Category == entities.SUB_TASK {
 			fmt.Print("subTask not added\n")
 			continue
 		}
-		if issue.CommitDetail.IsBreakingChange {
+		if issue.ParsedCommit.IsBreakingChange {
 			m.GValues.BreakingChange[label] = append(m.GValues.BreakingChange[label], issue)
 			fmt.Print("added as Breaking Change\n")
 			hasBreaking = true
 		}
-		if issue.IssueDetail.Category == trackers.CLOSED_FEATURE {
+		if issue.Issue.Category == entities.CLOSED_FEATURE {
 			m.GValues.Features[label] = append(m.GValues.Features[label], issue)
 			fmt.Print("added as feature\n")
 			hasNewFeature = true
 			continue
 		}
-		if issue.IssueDetail.Category == trackers.FIXED_BUG {
+		if issue.Issue.Category == entities.FIXED_BUG {
 			m.GValues.Bugs[label] = append(m.GValues.Bugs[label], issue)
 			fmt.Print("added as bug\n")
 			hasBugFixed = true
@@ -334,23 +307,23 @@ func (m *Model) addFoundIssues(label string, issues []ExtractedIssue) (bool, boo
 	return hasBreaking, hasNewFeature, hasBugFixed
 }
 
-func (m *Model) addParsedCommitAsIssues(label string, commits map[string]git.CommitDetail) (bool, bool, bool) {
+func (m *Model) addParsedCommitAsIssues(label string, commits map[string]entities.ParsedCommit) (bool, bool, bool) {
 	var hasBreaking, hasNewFeature, hasBugFixed bool
 
 	for _, c := range commits {
 		fmt.Printf("analysing %s\n", c.String())
-		ei := ExtractedIssue{
+		ei := entities.ExtractedIssue{
 			IssueTracker: c.ParsedIssueTracker,
-			CommitDetail: c,
-			IssueDetail:  trackers.IssueDetail{IssueKey: c.ParsedKey}}
-		if c.ParsedCategory == parsers.FEATURE {
-			ei.IssueDetail.Category = trackers.CLOSED_FEATURE
+			ParsedCommit: c,
+			Issue:        entities.Issue{IssueKey: c.ParsedKey}}
+		if c.ParsedCategory == entities.FEATURE {
+			ei.Issue.Category = entities.CLOSED_FEATURE
 			m.GValues.Features[label] = append(m.GValues.Features[label], ei)
 			fmt.Print("added as feature\n")
 			hasNewFeature = true
 		}
-		if c.ParsedCategory == parsers.BUG_FIX {
-			ei.IssueDetail.Category = trackers.FIXED_BUG
+		if c.ParsedCategory == entities.BUG_FIX {
+			ei.Issue.Category = entities.FIXED_BUG
 			m.GValues.Bugs[label] = append(m.GValues.Bugs[label], ei)
 			fmt.Print("added as bug\n")
 			hasBugFixed = true
@@ -366,38 +339,38 @@ func (m *Model) addParsedCommitAsIssues(label string, commits map[string]git.Com
 	return hasBreaking, hasNewFeature, hasBugFixed
 }
 
-func (m *Model) addKnownIssues(label string, issues []trackers.IssueDetail, it string) {
+func (m *Model) addKnownIssues(label string, issues []entities.Issue, it string) {
 	for _, issue := range issues {
 
-		m.GValues.KnownIssues[label] = append(m.GValues.KnownIssues[label], ExtractedIssue{
-			IssueDetail:  issue,
+		m.GValues.KnownIssues[label] = append(m.GValues.KnownIssues[label], entities.ExtractedIssue{
+			Issue:        issue,
 			IssueTracker: it,
 		})
 		fmt.Printf("added %s\n", issue.String())
 	}
 }
 
-func (m *Model) addCommitDetails(repo Repo, cds []git.CommitDetail) {
-	repo.CommitDetails = cds
+func (m *Model) addParsedCommits(repo entities.Repo, cds []entities.ParsedCommit) {
+	repo.ParsedCommits = cds
 	m.GValues.GitRepos = append(m.GValues.GitRepos, repo)
 
 	for _, issue := range cds {
 		fmt.Printf("analysing %s\n", issue.String())
-		ei := ExtractedIssue{}
-		ei.CommitDetail = issue
+		ei := entities.ExtractedIssue{}
+		ei.ParsedCommit = issue
 
 		if issue.IsBreakingChange {
 			m.GValues.BreakingChange[repo.Label] = append(m.GValues.BreakingChange[repo.Label], ei)
 			fmt.Print("added as Breaking Change\n")
 			repo.HasBreaking = true
 		}
-		if issue.ParsedCategory == parsers.FEATURE {
+		if issue.ParsedCategory == entities.FEATURE {
 			m.GValues.Features[repo.Label] = append(m.GValues.Features[repo.Label], ei)
 			fmt.Print("added as feature\n")
 			repo.HasNewFeature = true
 			continue
 		}
-		if issue.ParsedCategory == parsers.BUG_FIX {
+		if issue.ParsedCategory == entities.BUG_FIX {
 			m.GValues.Bugs[repo.Label] = append(m.GValues.Bugs[repo.Label], ei)
 			fmt.Print("added as bug\n")
 			repo.HasBugFixed = true
@@ -451,7 +424,7 @@ func (m *Model) Yaml() ([]byte, error) {
 		return nil, err
 	}
 
-	y, err := utils.NewYaml(yb)
+	y, err := yamlfile.NewYaml(yb)
 	if err != nil {
 		return nil, err
 	}

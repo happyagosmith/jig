@@ -1,4 +1,4 @@
-package releaseNote
+package releasenote
 
 import (
 	"fmt"

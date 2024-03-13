@@ -5,20 +5,28 @@ import (
 	"os"
 	"testing"
 
-	"github.com/happyagosmith/jig/internal/model"
-	git "github.com/happyagosmith/jig/internal/repositories"
-	"github.com/happyagosmith/jig/internal/trackers"
+	"github.com/happyagosmith/jig/internal/entities"
+	"github.com/happyagosmith/jig/internal/filehandler/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+type MockRepoParser struct {
+	mock.Mock
+}
+
+func (m *MockRepoParser) Parse(commits []entities.Commit) ([]entities.ParsedCommit, error) {
+	args := m.Called(commits)
+	return args.Get(0).([]entities.ParsedCommit), args.Error(1)
+}
 
 type MockGitLabClient struct {
 	mock.Mock
 }
 
-func (m *MockGitLabClient) ExtractCommits(repoID, fromTag, toTag string) ([]git.CommitDetail, error) {
+func (m *MockGitLabClient) GetCommits(repoID, fromTag, toTag string) ([]entities.Commit, error) {
 	args := m.Called(repoID, fromTag, toTag)
-	return args.Get(0).([]git.CommitDetail), args.Error(1)
+	return args.Get(0).([]entities.Commit), args.Error(1)
 }
 
 func (m *MockGitLabClient) GetReleaseURL(id, version string) (string, error) {
@@ -68,7 +76,7 @@ func TestSetVersions(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	err = m.SetVersions(os.TempDir())
+	err = m.UpdateWithReposVersions(os.TempDir())
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -115,8 +123,13 @@ func TestEnrichWithGit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockedCommtis := []entities.Commit{}
+
 			mockGitLabClient := new(MockGitLabClient)
-			mockGitLabClient.On("ExtractCommits", tt.repoID, tt.previousVersion, tt.version).Return([]git.CommitDetail{}, nil)
+			mockGitLabClient.On("GetCommits", "repo1", "0.0.0", "1.0.0").Return(mockedCommtis, nil)
+
+			mockRepoParser := new(MockRepoParser)
+			mockRepoParser.On("Parse", mockedCommtis).Return([]entities.ParsedCommit{}, nil)
 
 			values := []byte(fmt.Sprintf(`
 services:
@@ -126,12 +139,12 @@ services:
     version: %s
 `, tt.repoID, tt.previousVersion, tt.version))
 
-			m, err := model.New(values, model.WithRepoSRV(mockGitLabClient))
+			m, err := model.New(values, model.WithRepoClient(mockGitLabClient), model.WithRepoParser(mockRepoParser))
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
 
-			err = m.EnrichWithGit()
+			err = m.EnrichWithRepos()
 
 			mockGitLabClient.AssertExpectations(t)
 			assert.NoError(t, err)
@@ -151,30 +164,30 @@ type MockIssueTracker struct {
 	mock.Mock
 }
 
-func (m *MockIssueTracker) GetIssues(keys []string) ([]trackers.IssueDetail, error) {
+func (m *MockIssueTracker) GetIssues(_ *entities.Repo, keys []string) ([]entities.Issue, error) {
 	args := m.Called(keys)
-	return args.Get(0).([]trackers.IssueDetail), args.Error(1)
+	return args.Get(0).([]entities.Issue), args.Error(1)
 }
 
-func (m *MockIssueTracker) GetKnownIssues(project, component string) ([]trackers.IssueDetail, error) {
-	args := m.Called(project, component)
-	return args.Get(0).([]trackers.IssueDetail), args.Error(1)
+func (m *MockIssueTracker) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
+	args := m.Called(repo)
+	return args.Get(0).([]entities.Issue), args.Error(1)
 }
 
 func TestEnrichWithIssueTrackers(t *testing.T) {
 	tests := []struct {
 		name            string
-		commits         []git.CommitDetail
-		issues          []trackers.IssueDetail
-		knownIssues     []trackers.IssueDetail
+		parsedCommits   []entities.ParsedCommit
+		issues          []entities.Issue
+		knownIssues     []entities.Issue
 		expectedContent string
 		expectedError   error
 	}{
 		{
-			name:        "Test EnrichWithIssueTrackers no issues",
-			commits:     []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA"}},
-			issues:      []trackers.IssueDetail{},
-			knownIssues: []trackers.IssueDetail{},
+			name:          "Test EnrichWithIssueTrackers no issues",
+			parsedCommits: []entities.ParsedCommit{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA"}},
+			issues:        []entities.Issue{},
+			knownIssues:   []entities.Issue{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -200,17 +213,17 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:    "Test EnrichWithIssueTrackers with features",
-			commits: []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: false}},
-			issues: []trackers.IssueDetail{{
+			name:          "Test EnrichWithIssueTrackers with features",
+			parsedCommits: []entities.ParsedCommit{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: false}},
+			issues: []entities.Issue{{
 				IssueKey:     "AAA-000",
 				IssueSummary: "summary",
 				IssueType:    "type",
 				IssueStatus:  "status",
-				Category:     trackers.CLOSED_FEATURE,
+				Category:     entities.CLOSED_FEATURE,
 			},
 			},
-			knownIssues: []trackers.IssueDetail{},
+			knownIssues: []entities.Issue{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -247,16 +260,16 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:    "Test EnrichWithIssueTrackers with bug",
-			commits: []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: false}},
-			issues: []trackers.IssueDetail{{
+			name:          "Test EnrichWithIssueTrackers with bug",
+			parsedCommits: []entities.ParsedCommit{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: false}},
+			issues: []entities.Issue{{
 				IssueKey:     "AAA-000",
 				IssueSummary: "summary",
 				IssueType:    "type",
 				IssueStatus:  "status",
-				Category:     trackers.FIXED_BUG,
+				Category:     entities.FIXED_BUG,
 			}},
-			knownIssues: []trackers.IssueDetail{},
+			knownIssues: []entities.Issue{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -294,13 +307,13 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 		},
 		{
 			name:   "Test EnrichWithIssueTrackers known issue",
-			issues: []trackers.IssueDetail{},
-			knownIssues: []trackers.IssueDetail{{
+			issues: []entities.Issue{},
+			knownIssues: []entities.Issue{{
 				IssueKey:     "AAA-000",
 				IssueSummary: "summary",
 				IssueType:    "type",
 				IssueStatus:  "status",
-				Category:     trackers.OTHER,
+				Category:     entities.OTHER,
 			}},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
@@ -331,16 +344,16 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:    "Test EnrichWithIssueTrackers with breaking change",
-			commits: []git.CommitDetail{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: true}},
-			issues: []trackers.IssueDetail{{
+			name:          "Test EnrichWithIssueTrackers with breaking change",
+			parsedCommits: []entities.ParsedCommit{{ParsedKey: "AAA-000", ParsedIssueTracker: "JIRA", IsBreakingChange: true}},
+			issues: []entities.Issue{{
 				IssueKey:     "AAA-000",
 				IssueSummary: "summary",
 				IssueType:    "type",
 				IssueStatus:  "status",
-				Category:     trackers.CLOSED_FEATURE,
+				Category:     entities.CLOSED_FEATURE,
 			}},
-			knownIssues: []trackers.IssueDetail{},
+			knownIssues: []entities.Issue{},
 			expectedContent: "services:\n" +
 				"  - label: label1\n" +
 				"    gitRepoID: repoID\n" +
@@ -394,12 +407,17 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockGitLabClient := new(MockGitLabClient)
-			mockIssueTracker := new(MockIssueTracker)
+			mockedCommtis := []entities.Commit{{ID: "commit1", ShortID: "shortID1", Message: "[AAA-1234] With reference"}}
 
-			mockGitLabClient.On("ExtractCommits", "repoID", "0.0.0", "1.0.0").Return(tt.commits, nil)
+			mockGitLabClient := new(MockGitLabClient)
+			mockGitLabClient.On("GetCommits", "repoID", "0.0.0", "1.0.0").Return(mockedCommtis, nil)
+
+			mockRepoParser := new(MockRepoParser)
+			mockRepoParser.On("Parse", mockedCommtis).Return(tt.parsedCommits, nil)
+
+			mockIssueTracker := new(MockIssueTracker)
 			mockIssueTracker.On("GetIssues", mock.Anything).Return(tt.issues, nil)
-			mockIssueTracker.On("GetKnownIssues", "project", "component").Return(tt.knownIssues, nil)
+			mockIssueTracker.On("GetKnownIssues", mock.Anything).Return(tt.knownIssues, nil)
 
 			values := []byte("" +
 				"services:\n" +
@@ -409,11 +427,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n")
-			m, err := model.New(values, model.WithRepoSRV(mockGitLabClient), model.WithIssueTracker("JIRA", mockIssueTracker))
+
+			m, err := model.New(values,
+				model.WithRepoClient(mockGitLabClient),
+				model.WithRepoParser(mockRepoParser),
+				model.WithIssueTracker("JIRA", mockIssueTracker))
 			assert.NoError(t, err)
 
 			assert.Equal(t, tt.expectedError, err)
-			err = m.EnrichWithGit()
+			err = m.EnrichWithRepos()
 			assert.NoError(t, err)
 
 			err = m.EnrichWithIssueTrackers()

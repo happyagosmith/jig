@@ -1,9 +1,9 @@
-package utils_test
+package yaml_test
 
 import (
 	"testing"
 
-	"github.com/happyagosmith/jig/internal/utils"
+	"github.com/happyagosmith/jig/internal/filehandler/yaml"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +19,7 @@ func TestYaml(t *testing.T) {
 			"key4:\n" +
 			"  - t1: 1\n" +
 			"    t2: 2"
-		y, _ := utils.NewYaml([]byte(want))
+		y, _ := yaml.NewYaml([]byte(want))
 		got, _ := y.String()
 		assert.Equal(t, want, got, "output yaml")
 	})
@@ -101,8 +101,8 @@ func TestMergeYaml(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ny1, _ := utils.NewYaml([]byte(tt.y1))
-			ny2, _ := utils.NewYaml([]byte(tt.y2))
+			ny1, _ := yaml.NewYaml([]byte(tt.y1))
+			ny2, _ := yaml.NewYaml([]byte(tt.y2))
 			ny1.Merge(ny2)
 
 			got, _ := ny1.String()
@@ -157,7 +157,7 @@ key2: value2
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			y, err := utils.NewYaml([]byte(tt.content))
+			y, err := yaml.NewYaml([]byte(tt.content))
 			if err != nil {
 				t.Fatalf("NewYaml() error = %v", err)
 			}
@@ -228,7 +228,7 @@ a: hello
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			y, err := utils.NewYaml([]byte(tt.yamlData))
+			y, err := yaml.NewYaml([]byte(tt.yamlData))
 			if err != nil {
 				t.Fatalf("NewYaml() error = %v", err)
 			}

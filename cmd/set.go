@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/happyagosmith/jig/internal/model"
+	"github.com/happyagosmith/jig/internal/filehandler/model"
 )
 
 func setVersions() *cobra.Command {
@@ -77,25 +77,25 @@ services:
 			fl := NewFileLoader(GetConfigString(GitToken))
 			cmd.Printf("using model file: %s\n", modelPath)
 			b, err := fl.GetFile(modelPath)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
-			vcs, err := ConfigureRepoSRV()
-			CheckErr(err)
+			repoclient, err := ConfigureRepoclient()
+			CheckErr(cmd, err)
 
-			m, err := model.New(b, model.WithRepoSRV(vcs))
-			CheckErr(err)
+			m, err := model.New(b, model.WithRepoClient(repoclient))
+			CheckErr(cmd, err)
 
-			err = m.SetVersions(filepath.Dir(modelPath))
-			CheckErr(err)
+			err = m.UpdateWithReposVersions(filepath.Dir(modelPath))
+			CheckErr(cmd, err)
 
-			err = m.SetReposInfos()
-			CheckErr(err)
+			err = m.UpdateWithReposInfos()
+			CheckErr(cmd, err)
 
 			b, err = m.Yaml()
-			CheckErr(err)
+			CheckErr(cmd, err)
 
 			err = os.WriteFile(modelPath, b, 0644)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
 			cmd.Printf("\nversions updated with success in the model %s\n", modelPath)
 

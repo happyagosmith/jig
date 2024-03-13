@@ -1,21 +1,21 @@
-package repositories_test
+package parsers_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/happyagosmith/jig/internal/entities"
 	"github.com/happyagosmith/jig/internal/parsers"
-	git "github.com/happyagosmith/jig/internal/repositories"
+	"github.com/happyagosmith/jig/internal/repoclients"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGitLabCommitParse(t *testing.T) {
 	type want struct {
 		idx int
-		cd  git.CommitDetail
+		cd  entities.ParsedCommit
 	}
 	tests := []struct {
 		name               string
@@ -34,11 +34,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 0,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "AAA-1234",
 						ParsedIssueTracker: "JIRA",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.UNKNOWN,
+						ParsedCategory:     entities.UNKNOWN,
 						Summary:            "With reference",
 						CommitID:           "commit1",
 						Message:            "[AAA-1234] With reference\n",
@@ -46,11 +46,11 @@ func TestGitLabCommitParse(t *testing.T) {
 				},
 				{
 					idx: 1,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "AAA-5678",
 						ParsedIssueTracker: "JIRA",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.UNKNOWN,
+						ParsedCategory:     entities.UNKNOWN,
 						Summary:            "Different reference",
 						CommitID:           "commit3",
 						Message:            "[AAA-5678] Different reference\n",
@@ -67,11 +67,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 0,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "CC-123",
 						ParsedIssueTracker: "JIRA",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.FEATURE,
+						ParsedCategory:     entities.FEATURE,
 						Summary:            "this is a feature tracked in jira",
 						CommitID:           "commit1",
 						Message:            "feat(j_CC-123): this is a feature tracked in jira",
@@ -88,11 +88,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 1,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "CC-456",
 						ParsedIssueTracker: "JIRA",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.BUG_FIX,
+						ParsedCategory:     entities.BUG_FIX,
 						Summary:            "this is a bug fixed tracked in jira",
 						CommitID:           "commit2",
 						Message:            "fix(j_CC-456): this is a bug fixed tracked in jira",
@@ -109,11 +109,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 2,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "CC-789",
 						ParsedIssueTracker: "JIRA",
 						IsBreakingChange:   true,
-						ParsedCategory:     parsers.BUG_FIX,
+						ParsedCategory:     entities.BUG_FIX,
 						Summary:            "this is a breaking change tracked in jira",
 						CommitID:           "commit3",
 						Message:            "fix(j_CC-789)!: this is a breaking change tracked in jira",
@@ -130,11 +130,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 3,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "CC-222",
 						ParsedIssueTracker: "NONE",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.BUG_FIX,
+						ParsedCategory:     entities.BUG_FIX,
 						Summary:            "this has an unknown issue tracker",
 						CommitID:           "commit4",
 						Message:            "fix(CC-222): this has an unknown issue tracker",
@@ -152,11 +152,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 4,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "",
 						ParsedIssueTracker: "NONE",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.BUG_FIX,
+						ParsedCategory:     entities.BUG_FIX,
 						Summary:            "this has an unknown issue tracker and no issueKey",
 						CommitID:           "commit5",
 						Message:            "fix: this has an unknown issue tracker and no issueKey",
@@ -181,11 +181,11 @@ func TestGitLabCommitParse(t *testing.T) {
 			wantCommitDetails: []want{
 				{
 					idx: 0,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "1",
 						ParsedIssueTracker: "GIT",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.UNKNOWN,
+						ParsedCategory:     entities.FEATURE,
 						Summary:            "ci: Update README.md",
 						CommitID:           "commit0",
 						Message:            "ci: Update README.md\n\nthis commit is to show if it works closes #1",
@@ -193,11 +193,11 @@ func TestGitLabCommitParse(t *testing.T) {
 				},
 				{
 					idx: 1,
-					cd: git.CommitDetail{
+					cd: entities.ParsedCommit{
 						ParsedKey:          "2",
 						ParsedIssueTracker: "GIT",
 						IsBreakingChange:   false,
-						ParsedCategory:     parsers.FEATURE,
+						ParsedCategory:     entities.FEATURE,
 						Summary:            "Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'",
 						CommitID:           "commit2",
 						Message:            "Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'\n\nResolve \"this is an issue to test the MR\"\n\nCloses #2\n\nSee merge request demo!1",
@@ -215,14 +215,19 @@ func TestGitLabCommitParse(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			gc, err := git.NewClient(srv.URL, "token", tt.issuePatterns,
-				git.WithCustomPattern(`\[(?P<scope>[^\]]*)\](?P<subject>.*)`),
-				git.WithKeepCCWithoutScope(tt.keepCCWithoutScope))
+			gc, err := repoclients.NewGitLab(srv.URL, "token")
 			assert.NoError(t, err, "NewGit error must be nil")
+			commits, err := gc.GetCommits("123", "from", "to")
+			assert.NoError(t, err, "GetCommits error must be nil")
 
-			gotCds, err := gc.ExtractCommits("", "from", "to")
+			gp, err := parsers.New(tt.issuePatterns,
+				parsers.WithCustomPattern(`\[(?P<scope>[^\]]*)\](?P<subject>.*)`),
+				parsers.WithKeepCCWithoutScope(tt.keepCCWithoutScope))
+			assert.NoError(t, err, "NewGit error must be nil")
+			gotCds, err := gp.Parse(commits)
+
+			assert.NoError(t, err, "Parse error must be nil")
 			assert.Equal(t, tt.wantResultLen, len(gotCds))
-			assert.NoError(t, err, "ExtractKeys error must be nil")
 
 			for _, want := range tt.wantCommitDetails {
 				idx := want.idx
@@ -236,58 +241,4 @@ func TestGitLabCommitParse(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestGitLabCommitParseError(t *testing.T) {
-	t.Run("test api error", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(404)
-		}))
-		defer srv.Close()
-
-		git, err := git.NewClient(srv.URL, "token", []parsers.IssuePattern{})
-		assert.NoError(t, err, "NewGit error must be nil")
-
-		_, err = git.ExtractCommits("", "from", "to")
-		assert.NotNil(t, err, "ParseCommits should return error")
-	})
-}
-
-func TestGetRepoURL(t *testing.T) {
-	gitRepoID := "123"
-
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "/api/v4/projects/"+gitRepoID {
-			rw.Write([]byte(`{"web_url": "https://gitlab.example.com/my/repo"}`))
-		} else {
-			http.Error(rw, "Not found", http.StatusNotFound)
-		}
-	}))
-
-	g, err := git.NewClient(server.URL, "token", []parsers.IssuePattern{})
-	assert.NoError(t, err)
-	releaseURL, err := g.GetRepoURL(gitRepoID)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "https://gitlab.example.com/my/repo", releaseURL)
-}
-
-func TestGetReleaseURL(t *testing.T) {
-	gitRepoID := "123"
-	version := "v1.0.0"
-
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == fmt.Sprintf("/api/v4/projects/%s/releases/%s", gitRepoID, version) {
-			rw.Write([]byte(`{"_links": { "self": "https://gitlab.example.com/my/repo/releases/v1.0.0"}}`))
-		} else {
-			http.Error(rw, "Not found", http.StatusNotFound)
-		}
-	}))
-
-	g, err := git.NewClient(server.URL, "token", []parsers.IssuePattern{})
-	assert.NoError(t, err)
-	releaseURL, err := g.GetReleaseURL(gitRepoID, version)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "https://gitlab.example.com/my/repo/releases/v1.0.0", releaseURL)
 }

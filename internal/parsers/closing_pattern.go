@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/happyagosmith/jig/internal/entities"
 )
 
 type Verb string
@@ -21,7 +23,7 @@ func (v Verb) String() string {
 
 type CPIssue struct {
 	Key      string
-	Category CCType
+	Category entities.CommitCategory
 	Verb     Verb
 }
 
@@ -69,11 +71,11 @@ func (p ClosingPatternParser) Parse(s string) ([]CPIssue, error) {
 		verb := extractVerb(v)
 
 		for _, key := range split(keys) {
-			category := UNKNOWN
+			category := entities.UNKNOWN
 			if verb == Close || verb == Implement {
-				category = FEATURE
+				category = entities.FEATURE
 			} else if verb == Fix || verb == Resolve {
-				category = BUG_FIX
+				category = entities.BUG_FIX
 			}
 			result = append(result, CPIssue{
 				Verb:     verb,

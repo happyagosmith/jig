@@ -20,5 +20,6 @@ import "github.com/happyagosmith/jig/cmd"
 var version string
 
 func main() {
-	cmd.Execute(version)
+	rootCmd := cmd.NewRootCmd(version)
+	rootCmd.Execute()
 }

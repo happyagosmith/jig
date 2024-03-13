@@ -6,30 +6,35 @@ package cmd
 import (
 	"os"
 
-	"github.com/happyagosmith/jig/internal/model"
+	"github.com/happyagosmith/jig/internal/filehandler/model"
 	"github.com/spf13/cobra"
 )
 
-func EnrichModel(b []byte) []byte {
-	jiraTracker := ConfigureJira()
-	repoSRV, err := ConfigureRepoSRV()
-	CheckErr(err)
+func EnrichModel(cmd *cobra.Command, b []byte) []byte {
+	jiratracker, err := ConfigureJira()
+	CheckErr(cmd, err)
+	repotracker, err := ConfigureRepoclient()
+	CheckErr(cmd, err)
+	repoparser, err := ConfigureRepoParser()
+	CheckErr(cmd, err)
 
-	model, err := model.New(b, model.WithRepoSRV(repoSRV),
-		model.WithIssueTracker("JIRA", jiraTracker),
-		model.WithIssueTracker("GIT", nil),
+	model, err := model.New(b,
+		model.WithRepoClient(repotracker),
+		model.WithRepoParser(repoparser),
+		model.WithIssueTracker("JIRA", jiratracker),
+		model.WithIssueTracker("GIT", repotracker),
 		model.WithIssueTracker("SILK", nil),
 	)
-	CheckErr(err)
+	CheckErr(cmd, err)
 
-	err = model.EnrichWithGit()
-	CheckErr(err)
+	err = model.EnrichWithRepos()
+	CheckErr(cmd, err)
 
 	err = model.EnrichWithIssueTrackers()
-	CheckErr(err)
+	CheckErr(cmd, err)
 
 	b, err = model.Yaml()
-	CheckErr(err)
+	CheckErr(cmd, err)
 
 	return b
 }
@@ -141,11 +146,11 @@ generatedValues:
 
 			cmd.Printf("using model file: %s\n", modelPath)
 			v, err := fl.GetFile(modelPath)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
-			b := EnrichModel(v)
+			b := EnrichModel(cmd, v)
 			err = os.WriteFile(modelPath, b, 0644)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
 			return nil
 		},

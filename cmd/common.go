@@ -22,7 +22,7 @@ func (fl FileLoader) GetFile(uri string) ([]byte, error) {
 	}
 
 	if _, err := os.Stat(uri); os.IsNotExist(err) {
-		CheckErr(err)
+		return nil, fmt.Errorf("file %s does not exist", uri)
 	}
 
 	return os.ReadFile(uri)

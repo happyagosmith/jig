@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/happyagosmith/jig/internal/model"
+	"github.com/happyagosmith/jig/internal/entities"
+	"github.com/happyagosmith/jig/internal/issuetrackers"
 	"github.com/happyagosmith/jig/internal/parsers"
-	git "github.com/happyagosmith/jig/internal/repositories"
-	"github.com/happyagosmith/jig/internal/trackers"
+	"github.com/happyagosmith/jig/internal/repoclients"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -72,14 +72,14 @@ func GetIssuePatterns() []parsers.IssuePattern {
 var initialized bool
 var cfgFile string
 
-func InitConfiguration() {
+func InitConfiguration(cmd *cobra.Command) {
 	if initialized {
 		return
 	}
 
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jig.yaml)")
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	cmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jig.yaml)")
+	cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	issuePatterns := issuePatternsValue{
 		{
@@ -95,92 +95,97 @@ func InitConfiguration() {
 			Pattern:      `#(\d+)`,
 		},
 	}
-	rootCmd.PersistentFlags().Var(&issuePatterns, IssuePatterns, "Issue patterns used to determine the issue tracker associated with each issue key")
-	viper.BindPFlag(IssuePatterns, rootCmd.PersistentFlags().Lookup(IssuePatterns))
+	cmd.PersistentFlags().Var(&issuePatterns, IssuePatterns, "Issue patterns used to determine the issue tracker associated with each issue key")
+	viper.BindPFlag(IssuePatterns, cmd.PersistentFlags().Lookup(IssuePatterns))
 
-	rootCmd.PersistentFlags().Bool(WithCCWithoutScope, false, "if true, extract conventional commit without scope")
-	viper.BindPFlag(WithCCWithoutScope, rootCmd.PersistentFlags().Lookup(WithCCWithoutScope))
+	cmd.PersistentFlags().Bool(WithCCWithoutScope, false, "if true, extract conventional commit without scope")
+	viper.BindPFlag(WithCCWithoutScope, cmd.PersistentFlags().Lookup(WithCCWithoutScope))
 
-	rootCmd.PersistentFlags().String(CustomCommitPattern, `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the git commit message to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
-	viper.BindPFlag(CustomCommitPattern, rootCmd.PersistentFlags().Lookup(CustomCommitPattern))
+	cmd.PersistentFlags().String(CustomCommitPattern, `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the git commit message to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
+	viper.BindPFlag(CustomCommitPattern, cmd.PersistentFlags().Lookup(CustomCommitPattern))
 
-	rootCmd.PersistentFlags().String(GitURL, "", "Git base URL")
-	viper.BindPFlag(GitURL, rootCmd.PersistentFlags().Lookup(GitURL))
+	cmd.PersistentFlags().String(GitURL, "", "Git base URL")
+	viper.BindPFlag(GitURL, cmd.PersistentFlags().Lookup(GitURL))
 
-	rootCmd.PersistentFlags().String(GitToken, "", "Git token with read REST API permissions")
-	viper.BindPFlag(GitToken, rootCmd.PersistentFlags().Lookup(GitToken))
+	cmd.PersistentFlags().String(GitToken, "", "Git token with read REST API permissions")
+	viper.BindPFlag(GitToken, cmd.PersistentFlags().Lookup(GitToken))
 
-	rootCmd.PersistentFlags().String(JiraURL, "", "Jira base URL")
-	viper.BindPFlag(JiraURL, rootCmd.PersistentFlags().Lookup(JiraURL))
+	cmd.PersistentFlags().String(JiraURL, "", "Jira base URL")
+	viper.BindPFlag(JiraURL, cmd.PersistentFlags().Lookup(JiraURL))
 
-	rootCmd.PersistentFlags().String(JiraUsername, "", "Jira username with read REST API permissions")
-	viper.BindPFlag(JiraUsername, rootCmd.PersistentFlags().Lookup(JiraUsername))
+	cmd.PersistentFlags().String(JiraUsername, "", "Jira username with read REST API permissions")
+	viper.BindPFlag(JiraUsername, cmd.PersistentFlags().Lookup(JiraUsername))
 
-	rootCmd.PersistentFlags().String(JiraPassword, "", "Jira password/token with read REST API permissions")
-	viper.BindPFlag(JiraPassword, rootCmd.PersistentFlags().Lookup(JiraPassword))
+	cmd.PersistentFlags().String(JiraPassword, "", "Jira password/token with read REST API permissions")
+	viper.BindPFlag(JiraPassword, cmd.PersistentFlags().Lookup(JiraPassword))
 
-	rootCmd.PersistentFlags().String(JiraClosedFeatureFilter, "Story:GOLIVE,TECH TASK:Completata", "List of filters type:status that identify the closed features")
-	viper.BindPFlag(JiraClosedFeatureFilter, rootCmd.PersistentFlags().Lookup(JiraClosedFeatureFilter))
+	cmd.PersistentFlags().String(JiraClosedFeatureFilter, "Story:GOLIVE,TECH TASK:Completata", "List of filters type:status that identify the closed features")
+	viper.BindPFlag(JiraClosedFeatureFilter, cmd.PersistentFlags().Lookup(JiraClosedFeatureFilter))
 
-	rootCmd.PersistentFlags().String(JiraFixedBugFilter, "BUG:FIXED,BUG:RELEASED", "List of filters type:status that identify the fixed bugs")
-	viper.BindPFlag(JiraFixedBugFilter, rootCmd.PersistentFlags().Lookup(JiraFixedBugFilter))
+	cmd.PersistentFlags().String(JiraFixedBugFilter, "BUG:FIXED,BUG:RELEASED", "List of filters type:status that identify the fixed bugs")
+	viper.BindPFlag(JiraFixedBugFilter, cmd.PersistentFlags().Lookup(JiraFixedBugFilter))
 
-	rootCmd.PersistentFlags().String(JiraKnownIssuesJQL, "status not in (Done, RELEASED, Fixed, GOLIVE, Cancelled) AND issuetype in (Bug, \"TECH DEBT\")", "Jira JQL to retrieve the known issues")
-	viper.BindPFlag(JiraKnownIssuesJQL, rootCmd.PersistentFlags().Lookup(JiraKnownIssuesJQL))
+	cmd.PersistentFlags().String(JiraKnownIssuesJQL, "status not in (Done, RELEASED, Fixed, GOLIVE, Cancelled) AND issuetype in (Bug, \"TECH DEBT\")", "Jira JQL to retrieve the known issues")
+	viper.BindPFlag(JiraKnownIssuesJQL, cmd.PersistentFlags().Lookup(JiraKnownIssuesJQL))
 }
 
-func addJiraOpt(label string, value string, opts *[]trackers.JiraOpt, opt func(string, string) trackers.JiraOpt) {
+func addJiraOpt(label string, value string, opts *[]issuetrackers.JiraOpt, opt func(string, string) issuetrackers.JiraOpt) error {
 	fmt.Printf("using %s -> %s\n", label, value)
 	filters := strings.Split(value, ",")
 	if len(filters) == 0 {
-		CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
+		return fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label)
 	}
 	for _, cff := range filters {
 		f := strings.Split(cff, ":")
 		if len(f) != 2 {
-			CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
+			return fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label)
 		}
 		*opts = append(*opts, opt(f[0], f[1]))
 	}
+
+	return nil
 }
 
-func ConfigureJira() trackers.Jira {
+func ConfigureJira() (*issuetrackers.Jira, error) {
 	if GetConfigString(JiraURL) == "" || GetConfigString(JiraUsername) == "" || GetConfigString(JiraPassword) == "" {
-		CheckErr(fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required"))
+		return nil, fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required")
 	}
 
-	var opts []trackers.JiraOpt
-	addJiraOpt("jiraClosedFeatureFilter", GetConfigString(JiraClosedFeatureFilter), &opts, trackers.WithClosedFeatureFilter)
-	addJiraOpt("jiraFixedBugFilter", GetConfigString(JiraFixedBugFilter), &opts, trackers.WithFixedBugFilter)
+	var opts []issuetrackers.JiraOpt
+	addJiraOpt("jiraClosedFeatureFilter", GetConfigString(JiraClosedFeatureFilter), &opts, issuetrackers.WithClosedFeatureFilter)
+	addJiraOpt("jiraFixedBugFilter", GetConfigString(JiraFixedBugFilter), &opts, issuetrackers.WithFixedBugFilter)
 	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", GetConfigString(JiraKnownIssuesJQL))
 	fmt.Printf("using %s -> %s\n", "jiraURL", GetConfigString(JiraURL))
 
-	opts = append(opts, trackers.WithKnownIssueJql(GetConfigString(JiraKnownIssuesJQL)))
-	jiraTracker, err := trackers.NewJira(
+	opts = append(opts, issuetrackers.WithKnownIssueJql(GetConfigString(JiraKnownIssuesJQL)))
+	jiraTracker, err := issuetrackers.NewJira(
 		GetConfigString(JiraURL),
 		GetConfigString(JiraUsername),
 		GetConfigString(JiraPassword),
 		opts...,
 	)
-	CheckErr(err)
 
-	return jiraTracker
+	return &jiraTracker, err
 }
 
-func ConfigureRepoSRV() (model.RepoSRV, error) {
+func ConfigureRepoclient() (entities.Repotracker, error) {
 	if GetConfigString(GitURL) == "" || GetConfigString(GitToken) == "" {
-		CheckErr(fmt.Errorf("gitURL and gitToken are required"))
+		return nil, fmt.Errorf("gitURL and gitToken are required")
 	}
 	fmt.Printf("using %s -> %s\n", "gitURL", GetConfigString(GitURL))
+
+	git, err := repoclients.NewGitLab(GetConfigString(GitURL), GetConfigString(GitToken))
+
+	return git, err
+}
+
+func ConfigureRepoParser() (entities.Repoparser, error) {
 	fmt.Printf("using %s -> %s\n", "customCommitPattern", GetConfigString(CustomCommitPattern))
 	fmt.Printf("using %s -> %v\n", "withCCWithoutScope", GetConfigString(WithCCWithoutScope))
 
-	git, err := git.NewClient(GetConfigString(GitURL), GetConfigString(GitToken), GetIssuePatterns(),
-		git.WithCustomPattern(GetConfigString(CustomCommitPattern)), git.WithKeepCCWithoutScope(GetConfigBool(WithCCWithoutScope)))
-	if err != nil {
-		return nil, err
-	}
-	CheckErr(err)
+	repoparser, err := parsers.New(GetIssuePatterns(),
+		parsers.WithCustomPattern(GetConfigString(CustomCommitPattern)),
+		parsers.WithKeepCCWithoutScope(GetConfigBool(WithCCWithoutScope)))
 
-	return git, nil
+	return repoparser, err
 }

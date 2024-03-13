@@ -1,9 +1,10 @@
 package parsers
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/happyagosmith/jig/internal/entities"
 )
 
 type CCParser struct {
@@ -11,45 +12,9 @@ type CCParser struct {
 	gni map[string]int
 }
 
-type CCType int
-
-const (
-	UNKNOWN CCType = iota
-	FEATURE
-	BUG_FIX
-)
-
-func (i CCType) String() string {
-	return []string{"UNKNOWN", "FEATURE", "BUG_FIX"}[i]
-}
-
-func (s CCType) MarshalYAML() (interface{}, error) {
-	return s.String(), nil
-}
-
-func (cct *CCType) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	if err := unmarshal(&s); err != nil {
-		return err
-	}
-
-	switch strings.ToLower(s) {
-	case "unknown":
-		*cct = UNKNOWN
-	case "feature":
-		*cct = FEATURE
-	case "bug_fix":
-		*cct = BUG_FIX
-	default:
-		return fmt.Errorf("invalid CCType %q", s)
-	}
-
-	return nil
-}
-
 type ConventionalCommit struct {
 	Type       string
-	Category   CCType
+	Category   entities.CommitCategory
 	Scope      string
 	IsBreaking bool
 	Subject    string
@@ -78,14 +43,14 @@ func (p CCParser) Parse(commit string) *ConventionalCommit {
 		return nil
 	}
 
-	cct := UNKNOWN
+	cct := entities.UNKNOWN
 	t := cc[0][p.gni["type"]]
 	if t == "feat" {
-		cct = FEATURE
+		cct = entities.FEATURE
 	}
 
 	if t == "fix" {
-		cct = BUG_FIX
+		cct = entities.BUG_FIX
 	}
 
 	isBreaking := false

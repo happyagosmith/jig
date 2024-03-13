@@ -3,6 +3,7 @@ package parsers_test
 import (
 	"testing"
 
+	"github.com/happyagosmith/jig/internal/entities"
 	"github.com/happyagosmith/jig/internal/parsers"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +13,7 @@ func TestConventionalCommit(t *testing.T) {
 		parser := parsers.NewConventionalCommit()
 		cc := parser.Parse("feat: send an email to the customer when a product is shipped")
 
-		assert.Equal(t, parsers.FEATURE, cc.Category)
+		assert.Equal(t, entities.FEATURE, cc.Category)
 		assert.Equal(t, "feat", cc.Type)
 
 		assert.Equal(t, "", cc.Scope)
@@ -23,7 +24,7 @@ func TestConventionalCommit(t *testing.T) {
 		parser := parsers.NewConventionalCommit()
 		cc := parser.Parse("feat(j_AAA-123)!: send an email to the customer when a product is shipped")
 
-		assert.Equal(t, parsers.FEATURE, cc.Category)
+		assert.Equal(t, entities.FEATURE, cc.Category)
 		assert.Equal(t, "feat", cc.Type)
 		assert.Equal(t, "j_AAA-123", cc.Scope)
 	})
@@ -32,7 +33,7 @@ func TestConventionalCommit(t *testing.T) {
 		parser := parsers.NewConventionalCommit()
 		cc := parser.Parse("fix(j_AAA-123)!: send an email to the customer when a product is shipped")
 
-		assert.Equal(t, parsers.BUG_FIX, cc.Category)
+		assert.Equal(t, entities.BUG_FIX, cc.Category)
 		assert.Equal(t, "fix", cc.Type)
 
 	})
@@ -41,7 +42,7 @@ func TestConventionalCommit(t *testing.T) {
 		parser := parsers.NewConventionalCommit()
 		cc := parser.Parse("doc(j_AAA-123)!: send an email to the customer when a product is shipped")
 
-		assert.Equal(t, parsers.UNKNOWN, cc.Category)
+		assert.Equal(t, entities.UNKNOWN, cc.Category)
 		assert.Equal(t, "doc", cc.Type)
 	})
 
@@ -49,7 +50,7 @@ func TestConventionalCommit(t *testing.T) {
 		parser := parsers.NewConventionalCommit()
 		cc := parser.Parse("feat: send an email to the customer when a product is shipped")
 
-		assert.Equal(t, parsers.FEATURE, cc.Category)
+		assert.Equal(t, entities.FEATURE, cc.Category)
 		assert.Equal(t, "feat", cc.Type)
 	})
 
@@ -57,7 +58,7 @@ func TestConventionalCommit(t *testing.T) {
 		parser := parsers.NewConventionalCommit()
 		cc := parser.Parse("fix: send an email to the customer when a product is shipped")
 
-		assert.Equal(t, parsers.BUG_FIX, cc.Category)
+		assert.Equal(t, entities.BUG_FIX, cc.Category)
 		assert.Equal(t, "fix", cc.Type)
 	})
 
