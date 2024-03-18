@@ -5,7 +5,7 @@
     "total":1,
     "issues":[
       {
-         "key":"AAA-1234",
+         "key":"JIRA-123",
          "fields":{
             "issuetype":{
                "name":"Story"
@@ -14,24 +14,11 @@
             "status":{
                "name":"GOLIVE"
             },
-            "summary":"this is a story"
-         }
-      },
-      {
-         "key":"AAA-1234",
-         "fields":{
-            "issuetype":{
-               "name":"TECH TASK"
-            },
-            "parent":{},
-            "status":{
-               "name":"Completata"
-            },
-            "summary":"this is a story"
+            "summary":"this is a jira story"
          }
       },     
       {
-         "key":"CC-456",
+         "key":"JIRA-456",
          "fields":{
             "issuetype":{
                "name":"BUG"
@@ -40,22 +27,8 @@
             "status":{
                "name":"FIXED"
             },
-            "summary":"this is a bug"
+            "summary":"this is a jira bug"
          }
-      },
-      {
-          "key":"AAA-4",
-          "fields":{
-             "issuetype":{
-                "name":"GENERIC SUBTASK",
-                "subtask":true
-             },
-             "parent":{},
-             "status":{
-                "name":"WORK IN PROGRESS"
-             },
-             "summary":"do it"
-          }
-       }
+      }
     ]
  }

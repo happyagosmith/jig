@@ -12,24 +12,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEnrich(t *testing.T) {
+func TestGenerate(t *testing.T) {
 	tests := []struct {
 		name           string
-		mockgitcommits string
-		mockgitissues  string
-		mockjira       string
+		mockgitcommits *string
+		mockgitissues  *string
+		mockjira       *string
 		model          string
+		rntpl          string
 		cmd            string
-		wantModel      string
+		wantrn         string
 	}{
 		{
-			name:           "test enrich",
-			mockgitcommits: "testdata/gitlab-compare.json",
-			mockgitissues:  "testdata/gitlab-issues.json",
-			mockjira:       "testdata/jira-issues.json",
-			model:          "testdata/model.yaml",
-			cmd:            "enrich %s",
-			wantModel:      "testdata/model-enriched.yaml",
+			name:           "test generate",
+			mockgitcommits: nil,
+			mockgitissues:  nil,
+			mockjira:       nil,
+			model:          "testdata/model-enriched.yaml",
+			rntpl:          "testdata/rn.tpl",
+			cmd:            "generate %s -m %s",
+			wantrn:         "testdata/rn.md",
+		},
+		{
+			name:           "test generate with enrich",
+			mockgitcommits: ptStr("testdata/gitlab-compare.json"),
+			mockgitissues:  ptStr("testdata/gitlab-issues.json"),
+			mockjira:       ptStr("testdata/jira-issues.json"),
+			model:          "testdata/model-enriched.yaml",
+			rntpl:          "testdata/rn.tpl",
+			cmd:            "generate --withEnrich %s -m %s",
+			wantrn:         "testdata/rn.md",
 		},
 	}
 
@@ -39,7 +51,7 @@ func TestEnrich(t *testing.T) {
 			jirasrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				gotJiraRequest = r
 				w.WriteHeader(200)
-				b, err := os.ReadFile(tt.mockjira)
+				b, err := os.ReadFile(*tt.mockjira)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -53,14 +65,14 @@ func TestEnrich(t *testing.T) {
 				gotGitRequest = append(gotGitRequest, r)
 				if r.URL.Path == "/api/v4/projects/123/repository/compare" {
 					w.WriteHeader(200)
-					b, err := os.ReadFile(tt.mockgitcommits)
+					b, err := os.ReadFile(*tt.mockgitcommits)
 					if err != nil {
 						t.Fatal(err)
 					}
 					w.Write(b)
 				} else if r.URL.Path == "/api/v4/projects/123/issues" {
 					w.WriteHeader(200)
-					b, err := os.ReadFile(tt.mockgitissues)
+					b, err := os.ReadFile(*tt.mockgitissues)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -81,19 +93,27 @@ func TestEnrich(t *testing.T) {
 			_, err = modelFile.Write(f)
 			assert.NoError(t, err)
 
-			cmdline := fmt.Sprintf(tt.cmd+" --config testdata/config.yaml --jiraURL %s --gitURL %s", modelFile.Name(), jirasrv.URL, gitsrv.URL)
-			fmt.Println("running: " + cmdline)
+			outputFile, err := os.CreateTemp("", "rn.md")
+			assert.NoError(t, err)
+			defer os.Remove(outputFile.Name())
 
+			cmdline := fmt.Sprintf(tt.cmd+" --config testdata/config.yaml  -o %s --jiraURL %s --gitURL %s", tt.rntpl, modelFile.Name(), outputFile.Name(), jirasrv.URL, gitsrv.URL)
+			fmt.Println("running: " + cmdline)
 			args, _ := shell.Parse(cmdline)
 			rootCmd := cmd.NewRootCmd("0.0.1")
 			rootCmd.SetArgs(args)
 			err = rootCmd.Execute()
 
 			assert.NoError(t, err)
-			assert.NotNil(t, gotJiraRequest)
-			assert.Equal(t, 2, len(gotGitRequest))
+			if tt.mockgitcommits != nil && tt.mockgitissues != nil {
+				assert.Equal(t, 2, len(gotGitRequest))
+			}
 
-			assertEqualContentFile(t, tt.wantModel, modelFile.Name())
+			if tt.mockjira != nil {
+				assert.NotNil(t, gotJiraRequest)
+			}
+
+			assertEqualContentFile(t, tt.wantrn, outputFile.Name())
 		})
 	}
 }

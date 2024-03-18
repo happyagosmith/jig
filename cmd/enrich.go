@@ -13,7 +13,7 @@ import (
 func EnrichModel(cmd *cobra.Command, b []byte) []byte {
 	jiratracker, err := ConfigureJira()
 	CheckErr(cmd, err)
-	repotracker, err := ConfigureRepoclient()
+	repotracker, err := ConfigureRepoClient()
 	CheckErr(cmd, err)
 	repoparser, err := ConfigureRepoParser()
 	CheckErr(cmd, err)

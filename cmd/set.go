@@ -79,7 +79,7 @@ services:
 			b, err := fl.GetFile(modelPath)
 			CheckErr(cmd, err)
 
-			repoclient, err := ConfigureRepoclient()
+			repoclient, err := ConfigureRepoClient()
 			CheckErr(cmd, err)
 
 			m, err := model.New(b, model.WithRepoClient(repoclient))

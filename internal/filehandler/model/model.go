@@ -249,9 +249,12 @@ func (m *Model) enrichRepoWithIssueTracker(repo *entities.Repo) error {
 			extractedIssues := make([]entities.ExtractedIssue, 0, len(issues))
 			for _, issue := range issues {
 				extractedIssues = append(extractedIssues, entities.ExtractedIssue{
-					IssueTracker: issuesTracker.label,
-					Issue:        issue,
-					ParsedCommit: commits[issue.IssueKey],
+					IssueTracker:  issuesTracker.label,
+					IssueKey:      issue.IssueKey,
+					IssueSummary:  issue.IssueSummary,
+					IssueCategory: issue.Category,
+					Issue:         issue,
+					ParsedCommit:  commits[issue.IssueKey],
 				})
 			}
 			hasBreaking, hasNewFeature, hasBugFixed := m.addFoundIssues(repo.Label, extractedIssues)
@@ -314,16 +317,17 @@ func (m *Model) addParsedCommitAsIssues(label string, commits map[string]entitie
 		fmt.Printf("analysing %s\n", c.String())
 		ei := entities.ExtractedIssue{
 			IssueTracker: c.ParsedIssueTracker,
-			ParsedCommit: c,
-			Issue:        entities.Issue{IssueKey: c.ParsedKey}}
+			IssueKey:     c.ParsedKey,
+			IssueSummary: c.Summary,
+			ParsedCommit: c}
 		if c.ParsedCategory == entities.FEATURE {
-			ei.Issue.Category = entities.CLOSED_FEATURE
+			ei.IssueCategory = entities.CLOSED_FEATURE
 			m.GValues.Features[label] = append(m.GValues.Features[label], ei)
 			fmt.Print("added as feature\n")
 			hasNewFeature = true
 		}
 		if c.ParsedCategory == entities.BUG_FIX {
-			ei.Issue.Category = entities.FIXED_BUG
+			ei.IssueCategory = entities.FIXED_BUG
 			m.GValues.Bugs[label] = append(m.GValues.Bugs[label], ei)
 			fmt.Print("added as bug\n")
 			hasBugFixed = true
@@ -343,8 +347,11 @@ func (m *Model) addKnownIssues(label string, issues []entities.Issue, it string)
 	for _, issue := range issues {
 
 		m.GValues.KnownIssues[label] = append(m.GValues.KnownIssues[label], entities.ExtractedIssue{
-			Issue:        issue,
-			IssueTracker: it,
+			IssueKey:      issue.IssueKey,
+			IssueSummary:  issue.IssueSummary,
+			IssueCategory: issue.Category,
+			IssueTracker:  it,
+			Issue:         issue,
 		})
 		fmt.Printf("added %s\n", issue.String())
 	}

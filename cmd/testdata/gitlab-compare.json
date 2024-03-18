@@ -6,29 +6,39 @@
     "commits":[
        {
           "id":"commit0",
+          "short_id":"short_commit0",
+          "title":"No reference",
           "message":"No reference \n"
        },
        {
           "id":"commit1",
-          "short_id":"82e1dd34",
-          "message":"[AAA-1234] this has a custom pattern\n"
+          "short_id":"short_commit1",
+          "title":"[JIRA-123] custom pattern",
+          "message":"[JIRA-123] custom pattern\n"
        },
        {
          "id":"commit2",
-         "short_id":"82e1dd34",
-         "message":"fix(j_CC-456): this is a conventional commit bug fixed tracked in jira"
+         "short_id":"short_commit2",
+         "title":"fix(j_JIRA-456): conventional commit bug fixed",
+         "message":"fix(j_JIRA-456): conventional commit bug fixed \n"
        },
        {
          "id":"commit3",
-         "short_id":"82e1dd34",
-         "message":"feat(CC-222)!: this is a conventional commit with an unknown issue tracker"
+         "short_id":"short_commit3",
+         "title":"feat(SILK-222)!: conventional commit",
+         "message":"feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+      },
+       {
+         "id":"commit3",
+         "short_id":"short_commit3",
+         "title":"feat(%222)!: conventional commit",
+         "message":"feat(%222)!: conventional commit \n unknown issue tracker"
       },
       {
-         "id":"commit0",
-         "short_id":"5f91c539",
-         "title":"ci: Update README.md",
-         "message":"ci: this is a closing pattern that closes #1",
-         "web_url":"https://gitlab.com/-/commit/5f91c539669ab5d8f917e548eebd5797843f0656"
+         "id":"commit4",
+         "short_id":"short_commit4",
+         "title":"feat: closing pattern",
+         "message":"feat: closing pattern\n closes #1 gitlab issue"
       }
     ],
     "diffs":[]

@@ -3,8 +3,8 @@
        "id":1,
        "iid":1,
        "project_id":123,
-       "title":"this the issue title",
-       "description":"",
+       "title":"this is the gitlab issue title",
+       "description":"this is the gitlab issue description",
        "state":"closed",
        "labels": [
         "feature"

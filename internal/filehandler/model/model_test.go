@@ -235,11 +235,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  features:\n" +
 				"    label1:\n" +
 				"      - issueTracker: JIRA\n" +
-				"        category: CLOSED_FEATURE\n" +
 				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
-				"        issueType: type\n" +
-				"        issueStatus: status\n" +
+				"        issueCategory: CLOSED_FEATURE\n" +
+				"        issueDetail:\n" +
+				"          extractedCategory: CLOSED_FEATURE\n" +
+				"          issueKey: AAA-000\n" +
+				"          issueSummary: summary\n" +
+				"          issueType: type\n" +
+				"          issueStatus: status\n" +
 				"        commitDetail:\n" +
 				"          parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +
@@ -282,11 +286,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  bugs:\n" +
 				"    label1:\n" +
 				"      - issueTracker: JIRA\n" +
-				"        category: FIXED_BUG\n" +
 				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
-				"        issueType: type\n" +
-				"        issueStatus: status\n" +
+				"        issueCategory: FIXED_BUG\n" +
+				"        issueDetail:\n" +
+				"          extractedCategory: FIXED_BUG\n" +
+				"          issueKey: AAA-000\n" +
+				"          issueSummary: summary\n" +
+				"          issueType: type\n" +
+				"          issueStatus: status\n" +
 				"        commitDetail:\n" +
 				"          parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +
@@ -328,11 +336,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  knownIssues:\n" +
 				"    label1:\n" +
 				"      - issueTracker: JIRA\n" +
-				"        category: OTHER\n" +
 				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
-				"        issueType: type\n" +
-				"        issueStatus: status\n" +
+				"        issueCategory: OTHER\n" +
+				"        issueDetail:\n" +
+				"          extractedCategory: OTHER\n" +
+				"          issueKey: AAA-000\n" +
+				"          issueSummary: summary\n" +
+				"          issueType: type\n" +
+				"          issueStatus: status\n" +
 				"  breakingChange: {}\n" +
 				"  gitRepos:\n" +
 				"    - label: label1\n" +
@@ -365,11 +377,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  features:\n" +
 				"    label1:\n" +
 				"      - issueTracker: JIRA\n" +
-				"        category: CLOSED_FEATURE\n" +
 				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
-				"        issueType: type\n" +
-				"        issueStatus: status\n" +
+				"        issueCategory: CLOSED_FEATURE\n" +
+				"        issueDetail:\n" +
+				"          extractedCategory: CLOSED_FEATURE\n" +
+				"          issueKey: AAA-000\n" +
+				"          issueSummary: summary\n" +
+				"          issueType: type\n" +
+				"          issueStatus: status\n" +
 				"        commitDetail:\n" +
 				"          parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +
@@ -379,11 +395,15 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"  breakingChange:\n" +
 				"    label1:\n" +
 				"      - issueTracker: JIRA\n" +
-				"        category: CLOSED_FEATURE\n" +
 				"        issueKey: AAA-000\n" +
 				"        issueSummary: summary\n" +
-				"        issueType: type\n" +
-				"        issueStatus: status\n" +
+				"        issueCategory: CLOSED_FEATURE\n" +
+				"        issueDetail:\n" +
+				"          extractedCategory: CLOSED_FEATURE\n" +
+				"          issueKey: AAA-000\n" +
+				"          issueSummary: summary\n" +
+				"          issueType: type\n" +
+				"          issueStatus: status\n" +
 				"        commitDetail:\n" +
 				"          parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +

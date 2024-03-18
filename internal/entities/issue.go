@@ -45,7 +45,7 @@ func (ct *IssueCategory) UnmarshalYAML(unmarshal func(interface{}) error) error 
 }
 
 type Issue struct {
-	Category     IssueCategory `yaml:"category"`
+	Category     IssueCategory `yaml:"extractedCategory"`
 	IssueKey     string        `yaml:"issueKey,omitempty"`
 	IssueSummary string        `yaml:"issueSummary,omitempty"`
 	IssueType    string        `yaml:"issueType,omitempty"`

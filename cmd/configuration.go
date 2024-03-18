@@ -88,7 +88,11 @@ func InitConfiguration(cmd *cobra.Command) {
 		},
 		{
 			IssueTracker: "jira",
-			Pattern:      `j_(.+)|[A-Z]+-\d+`,
+			Pattern:      `[A-Z]+-\d+`,
+		},
+		{
+			IssueTracker: "jira",
+			Pattern:      `j_(.+)`,
 		},
 		{
 			IssueTracker: "git",
@@ -168,7 +172,7 @@ func ConfigureJira() (*issuetrackers.Jira, error) {
 	return &jiraTracker, err
 }
 
-func ConfigureRepoclient() (entities.Repotracker, error) {
+func ConfigureRepoClient() (entities.Repotracker, error) {
 	if GetConfigString(GitURL) == "" || GetConfigString(GitToken) == "" {
 		return nil, fmt.Errorf("gitURL and gitToken are required")
 	}

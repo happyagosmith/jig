@@ -1,0 +1,152 @@
+services:
+  - label: jig-test
+    gitRepoID: "123"
+    previousVersion: 0.0.1
+    version: 0.0.2
+    checkVersion: '@testdata/version.yaml:$.versions.a'
+generatedValues:
+  features:
+    jig-test:
+      - issueTracker: JIRA
+        issueKey: JIRA-123
+        issueSummary: this is a jira story
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: JIRA-123
+          issueSummary: this is a jira story
+          issueType: Story
+          issueStatus: GOLIVE
+        commitDetail:
+          summary: custom pattern
+          message: |
+            [JIRA-123] custom pattern
+          commitID: commit1
+          parsedKey: JIRA-123
+          parsedIssueTracker: JIRA
+          parser: customParser
+      - issueTracker: GIT
+        issueKey: "1"
+        issueSummary: this is the gitlab issue title
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "1"
+          issueSummary: this is the gitlab issue title
+          issueType: issue
+          issueStatus: closed
+        commitDetail:
+          summary: 'feat: closing pattern'
+          message: |-
+            feat: closing pattern
+             closes #1 gitlab issue
+          commitID: commit4
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: SILK
+        issueKey: SILK-222
+        issueSummary: 'conventional commit '
+        issueCategory: CLOSED_FEATURE
+        commitDetail:
+          summary: 'conventional commit '
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          commitID: commit3
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+  bugs:
+    jig-test:
+      - issueTracker: JIRA
+        issueKey: JIRA-456
+        issueSummary: this is a jira bug
+        issueCategory: FIXED_BUG
+        issueDetail:
+          extractedCategory: FIXED_BUG
+          issueKey: JIRA-456
+          issueSummary: this is a jira bug
+          issueType: BUG
+          issueStatus: FIXED
+        commitDetail:
+          summary: 'conventional commit bug fixed '
+          message: "fix(j_JIRA-456): conventional commit bug fixed \n"
+          commitID: commit2
+          parsedCategory: BUG_FIX
+          parsedKey: JIRA-456
+          parsedIssueTracker: JIRA
+          parser: conventionalParser
+          parsedType: fix
+  knownIssues: {}
+  breakingChange:
+    jig-test:
+      - issueTracker: SILK
+        issueKey: SILK-222
+        issueSummary: 'conventional commit '
+        issueCategory: CLOSED_FEATURE
+        commitDetail:
+          summary: 'conventional commit '
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          commitID: commit3
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+  gitRepos:
+    - label: jig-test
+      gitRepoID: "123"
+      previousVersion: 0.0.1
+      version: 0.0.2
+      checkVersion: '@testdata/version.yaml:$.versions.a'
+      extractedKeys:
+        - summary: custom pattern
+          message: |
+            [JIRA-123] custom pattern
+          commitID: commit1
+          parsedKey: JIRA-123
+          parsedIssueTracker: JIRA
+          parser: customParser
+        - summary: 'conventional commit bug fixed '
+          message: "fix(j_JIRA-456): conventional commit bug fixed \n"
+          commitID: commit2
+          parsedCategory: BUG_FIX
+          parsedKey: JIRA-456
+          parsedIssueTracker: JIRA
+          parser: conventionalParser
+          parsedType: fix
+        - summary: 'conventional commit '
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          commitID: commit3
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+        - summary: 'conventional commit '
+          message: "feat(%222)!: conventional commit \n unknown issue tracker"
+          commitID: commit3
+          parsedCategory: FEATURE
+          parsedKey: '%222'
+          parsedIssueTracker: NONE
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+        - summary: 'feat: closing pattern'
+          message: |-
+            feat: closing pattern
+             closes #1 gitlab issue
+          commitID: commit4
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      hasNewFeature: true
+      hasBugFixed: true
