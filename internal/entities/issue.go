@@ -50,8 +50,9 @@ type Issue struct {
 	IssueSummary string        `yaml:"issueSummary,omitempty"`
 	IssueType    string        `yaml:"issueType,omitempty"`
 	IssueStatus  string        `yaml:"issueStatus,omitempty"`
+	WebURL       string        `yaml:"webURL,omitempty"`
 }
 
 func (i Issue) String() string {
-	return fmt.Sprintf("key %s, issue type %s", i.IssueKey, i.Category)
+	return fmt.Sprintf("%s (%s: %s -> %s)", i.IssueKey, i.IssueType, i.IssueStatus, i.Category)
 }

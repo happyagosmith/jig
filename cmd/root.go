@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func NewRootCmd(version string) *cobra.Command {
@@ -45,12 +44,11 @@ conforms to a particular template.
 			cmd.Help()
 		},
 	}
-	cobra.OnInitialize(initConfig)
 	InitConfiguration(rootCmd)
 
 	rootCmd.AddCommand(newEnrichCmd())
 	rootCmd.AddCommand(newGenerateCmd())
-	rootCmd.AddCommand(setVersions())
+	rootCmd.AddCommand(newSetCmd())
 
 	return rootCmd
 }
@@ -61,22 +59,5 @@ func CheckErr(cmd *cobra.Command, e error) {
 		cmd.PrintErr(e)
 		cmd.Print("\n")
 		os.Exit(-1)
-	}
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".jig")
-	}
-
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "using config file:", viper.ConfigFileUsed())
 	}
 }

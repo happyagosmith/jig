@@ -1,4 +1,4 @@
-package repoclients
+package clients
 
 import (
 	"fmt"
@@ -32,7 +32,42 @@ func NewGitLab(URL, token string) (Git, error) {
 	return g, nil
 }
 
-func (g Git) GetCommits(id, from, to string) ([]entities.Commit, error) {
+func (g Git) GetMergeRequests(id, targetBranch string, commits []entities.RepoRecord) ([]entities.RepoRecord, error) {
+	if len(commits) == 0 {
+		return nil, nil
+	}
+
+	lookForCommit := map[string]bool{}
+	for _, c := range commits {
+		lookForCommit[c.ID] = true
+	}
+	opts := &gitlab.ListProjectMergeRequestsOptions{
+		UpdatedAfter: commits[0].CreatedAt,
+		State:        gitlab.String("merged"),
+		TargetBranch: gitlab.String(targetBranch),
+	}
+	mrs, _, err := g.c.MergeRequests.ListProjectMergeRequests(id, opts)
+
+	cs := make([]entities.RepoRecord, 0, len(mrs))
+	for _, mr := range mrs {
+		if !lookForCommit[mr.SHA] {
+			continue
+		}
+		cs = append(cs, entities.RepoRecord{
+			ID:        strconv.Itoa(mr.ID),
+			ShortID:   strconv.Itoa(mr.IID),
+			Title:     mr.Title,
+			Message:   mr.Description,
+			CreatedAt: mr.MergedAt,
+			WebURL:    mr.WebURL,
+			Origin:    "merge_request",
+		})
+	}
+
+	return cs, err
+}
+
+func (g Git) GetCommits(id, from, to string) ([]entities.RepoRecord, error) {
 	opt := &gitlab.CompareOptions{From: &from, To: &to}
 
 	c, _, err := g.c.Repositories.Compare(id, opt)
@@ -40,13 +75,16 @@ func (g Git) GetCommits(id, from, to string) ([]entities.Commit, error) {
 		return nil, err
 	}
 
-	var commits []entities.Commit
+	var commits []entities.RepoRecord
 	for _, commit := range c.Commits {
-		commits = append(commits, entities.Commit{
-			ID:      commit.ID,
-			ShortID: commit.ShortID,
-			Title:   commit.Title,
-			Message: commit.Message,
+		commits = append(commits, entities.RepoRecord{
+			ID:        commit.ID,
+			ShortID:   commit.ShortID,
+			Title:     commit.Title,
+			Message:   commit.Message,
+			CreatedAt: commit.CreatedAt,
+			WebURL:    commit.WebURL,
+			Origin:    "commit",
 		})
 	}
 
@@ -107,6 +145,7 @@ func (g Git) GetIssues(repo *entities.Repo, ids []string) ([]entities.Issue, err
 			IssueStatus:  issue.State,
 			IssueType:    *issue.IssueType,
 			Category:     g.extractIssueCategory(*issue),
+			WebURL:       issue.WebURL,
 		})
 	}
 
@@ -130,9 +169,10 @@ func (g Git) extractIssueCategory(gi gitlab.Issue) entities.IssueCategory {
 		}
 	}
 
-	return entities.OTHER
+	return entities.CLOSED_FEATURE
 }
 
 func (g Git) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
+	fmt.Printf("retrieving known issues using GitLab has not been implemented yet\n")
 	return nil, nil
 }

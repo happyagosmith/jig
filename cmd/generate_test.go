@@ -17,6 +17,7 @@ func TestGenerate(t *testing.T) {
 		name           string
 		mockgitcommits *string
 		mockgitissues  *string
+		mockgitmr      *string
 		mockjira       *string
 		model          string
 		rntpl          string
@@ -27,6 +28,7 @@ func TestGenerate(t *testing.T) {
 			name:           "test generate",
 			mockgitcommits: nil,
 			mockgitissues:  nil,
+			mockgitmr:      nil,
 			mockjira:       nil,
 			model:          "testdata/model-enriched.yaml",
 			rntpl:          "testdata/rn.tpl",
@@ -37,6 +39,7 @@ func TestGenerate(t *testing.T) {
 			name:           "test generate with enrich",
 			mockgitcommits: ptStr("testdata/gitlab-compare.json"),
 			mockgitissues:  ptStr("testdata/gitlab-issues.json"),
+			mockgitmr:      ptStr("testdata/gitlab-mergerequest.json"),
 			mockjira:       ptStr("testdata/jira-issues.json"),
 			model:          "testdata/model-enriched.yaml",
 			rntpl:          "testdata/rn.tpl",
@@ -77,6 +80,13 @@ func TestGenerate(t *testing.T) {
 						t.Fatal(err)
 					}
 					w.Write(b)
+				} else if r.URL.Path == "/api/v4/projects/123/merge_requests" {
+					w.WriteHeader(200)
+					b, err := os.ReadFile(*tt.mockgitmr)
+					if err != nil {
+						t.Fatal(err)
+					}
+					w.Write(b)
 				} else {
 					http.Error(w, "Not found", http.StatusNotFound)
 				}
@@ -97,7 +107,7 @@ func TestGenerate(t *testing.T) {
 			assert.NoError(t, err)
 			defer os.Remove(outputFile.Name())
 
-			cmdline := fmt.Sprintf(tt.cmd+" --config testdata/config.yaml  -o %s --jiraURL %s --gitURL %s", tt.rntpl, modelFile.Name(), outputFile.Name(), jirasrv.URL, gitsrv.URL)
+			cmdline := fmt.Sprintf(tt.cmd+" --gitMRBranch main --config testdata/config.yaml  -o %s --jiraURL %s --gitURL %s", tt.rntpl, modelFile.Name(), outputFile.Name(), jirasrv.URL, gitsrv.URL)
 			fmt.Println("running: " + cmdline)
 			args, _ := shell.Parse(cmdline)
 			rootCmd := cmd.NewRootCmd("0.0.1")
@@ -106,7 +116,7 @@ func TestGenerate(t *testing.T) {
 
 			assert.NoError(t, err)
 			if tt.mockgitcommits != nil && tt.mockgitissues != nil {
-				assert.Equal(t, 2, len(gotGitRequest))
+				assert.Equal(t, 3, len(gotGitRequest))
 			}
 
 			if tt.mockjira != nil {

@@ -41,10 +41,9 @@ func (cct *CommitCategory) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	return nil
 }
 
-type ParsedCommit struct {
-	Summary            string         `yaml:"summary,omitempty"`
-	Message            string         `yaml:"message,omitempty"`
-	CommitID           string         `yaml:"commitID,omitempty"`
+type ParsedRepoRecord struct {
+	RepoRecord         `yaml:",inline"`
+	ParsedSummary      string         `yaml:"parsedSummary,omitempty"`
 	ParsedCategory     CommitCategory `yaml:"parsedCategory,omitempty"`
 	ParsedKey          string         `yaml:"parsedKey,omitempty"`
 	ParsedIssueTracker string         `yaml:"parsedIssueTracker"`
@@ -53,6 +52,10 @@ type ParsedCommit struct {
 	IsBreakingChange   bool           `yaml:"isBreakingChange,omitempty"`
 }
 
-func (c ParsedCommit) String() string {
-	return fmt.Sprintf("key %s, issue type %s", c.ParsedKey, c.ParsedCategory)
+func (c ParsedRepoRecord) String() string {
+	return fmt.Sprintf("%s issue %s (%s) with %s parser on %s", c.ParsedIssueTracker, c.ParsedKey, c.ParsedType, c.Parser, c.RepoRecord.String())
+}
+
+func (c ParsedRepoRecord) ShortString() string {
+	return fmt.Sprintf("%s (%s -> %s)", c.ParsedKey, c.ParsedType, c.ParsedCategory)
 }

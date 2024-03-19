@@ -1,0 +1,52 @@
+{
+    "commits":[
+       {
+          "id":"commit0",
+          "title":"No reference",
+          "short_id":"short_id0",
+          "message":"No reference \n",
+          "created_at": "2021-01-01T00:00:00Z",
+          "web_url": "http://gitlab.example.com/my/repo/commit/0"
+       },
+       {
+          "id":"commit1",
+          "title":"feat(j_CC-123): this is a feature tracked in jira",
+          "short_id":"short_id1",
+          "message":"feat(j_CC-123): this is a feature tracked in jira",
+          "created_at": "2021-01-02T00:00:00Z",
+          "web_url": "http://gitlab.example.com/my/repo/commit/1"
+       },
+       {
+         "id":"commit2",
+         "title":"fix(j_CC-456): this is a bug fixed tracked in jira",
+         "short_id":"short_id2",
+         "message":"fix(j_CC-456): this is a bug fixed tracked in jira",
+         "created_at": "2021-01-03T00:00:00Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/2"
+      },
+      {
+         "id":"commit3",
+         "title":"fix(j_CC-789)!: this is a breaking change tracked in jira",
+         "short_id":"short_id3",
+         "message":"fix(j_CC-789)!: this is a breaking change tracked in jira",
+         "created_at": "2021-01-04T00:00:00Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/3"
+      },
+      {
+         "id":"commit4",
+         "title":"fix(CC-222): this has an unknown issue tracker",
+         "short_id":"short_id4",
+         "message":"fix(CC-222): this has an unknown issue tracker",
+         "created_at": "2021-01-05T00:00:00Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/4"
+      },
+      {
+         "id":"commit5",
+         "title":"fix: this has an unknown issue tracker and no issueKey",
+         "short_id":"short_id5",
+         "message":"fix: this has an unknown issue tracker and no issueKey",
+         "created_at": "2021-01-06T00:00:00Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/5"
+      }
+    ]
+ }

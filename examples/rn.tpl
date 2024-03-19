@@ -23,20 +23,20 @@ This is an example of Release Note that uses the generated valuse by jig
 ## NEW FEATUREs
 {{- range  $key, $value := .generatedValues.features }}
 {{- range  $value }}
-- |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}](https://happyagosmith.atlassian.net/browse/{{ .issueKey }})
+- |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}]({{ default .repoDetail.webURL .issueDetail.webURL }})
 {{- end }}
 {{- end }}
 
 ## FIXED BUGs
 {{- range $key, $value := .generatedValues.bugs }}
 {{- range  $value }}
-- |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}](https://happyagosmith.atlassian.net/browse/{{ .issueKey }})
+- |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}]({{ default .repoDetail.webURL .issueDetail.webURL }})
 {{- end }}
 {{- end }} 
 
 ## KNOWN ISSUEs
 {{- range $key, $value := .generatedValues.knownIssues }}
 {{- range  $value }}
-- {{ .issueSummary }} [{{ .issueKey }}](https://happyagosmith.atlassian.net/browse/{{ .issueKey }})
+- {{ .issueSummary }} [{{ .issueKey }}]({{ default .repoDetail.webURL .issueDetail.webURL }})
 {{- end }}
 {{- end }}

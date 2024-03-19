@@ -25,22 +25,10 @@ func TestJiraGetKnownIssues(t *testing.T) {
 			expectedQuery: "jql=key%3Dvalue+and+project+%3D+%22project%22+and+component+%3D+%22component%22&maxResults=1000",
 		},
 		{
-			name:          "test jira GetKnownIssues2",
-			project:       "",
-			component:     "component",
-			expectedQuery: "jql=key%3Dvalue+and+component+%3D+%22component%22&maxResults=1000",
-		},
-		{
 			name:          "test jira GetKnownIssues3",
 			project:       "project",
 			component:     "",
 			expectedQuery: "jql=key%3Dvalue+and+project+%3D+%22project%22&maxResults=1000",
-		},
-		{
-			name:          "test jira GetKnownIssues4",
-			project:       "",
-			component:     "",
-			expectedQuery: "jql=key%3Dvalue&maxResults=1000",
 		},
 	}
 

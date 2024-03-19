@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/happyagosmith/jig/internal/entities"
 	"github.com/happyagosmith/jig/internal/issuetrackers"
 	"github.com/happyagosmith/jig/internal/parsers"
-	"github.com/happyagosmith/jig/internal/repoclients"
+	"github.com/happyagosmith/jig/internal/repo"
+	"github.com/happyagosmith/jig/internal/repo/clients"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -38,6 +40,7 @@ const (
 	CustomCommitPattern     = "customCommitPattern"
 	GitURL                  = "gitURL"
 	GitToken                = "gitToken"
+	GitMRBranch             = "gitMRBranch"
 	JiraURL                 = "jiraURL"
 	JiraUsername            = "jiraUsername"
 	JiraPassword            = "jiraPassword"
@@ -69,14 +72,9 @@ func GetIssuePatterns() []parsers.IssuePattern {
 	return issuePatterns
 }
 
-var initialized bool
 var cfgFile string
 
 func InitConfiguration(cmd *cobra.Command) {
-	if initialized {
-		return
-	}
-
 	cobra.OnInitialize(initConfig)
 	cmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jig.yaml)")
 	cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
@@ -101,6 +99,9 @@ func InitConfiguration(cmd *cobra.Command) {
 	}
 	cmd.PersistentFlags().Var(&issuePatterns, IssuePatterns, "Issue patterns used to determine the issue tracker associated with each issue key")
 	viper.BindPFlag(IssuePatterns, cmd.PersistentFlags().Lookup(IssuePatterns))
+
+	cmd.PersistentFlags().String(GitMRBranch, "", "The branch for which the merge request is being parsed. If this is not specified, the merge requests will not be processed.")
+	viper.BindPFlag(GitMRBranch, cmd.PersistentFlags().Lookup(GitMRBranch))
 
 	cmd.PersistentFlags().Bool(WithCCWithoutScope, false, "if true, extract conventional commit without scope")
 	viper.BindPFlag(WithCCWithoutScope, cmd.PersistentFlags().Lookup(WithCCWithoutScope))
@@ -131,6 +132,23 @@ func InitConfiguration(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().String(JiraKnownIssuesJQL, "status not in (Done, RELEASED, Fixed, GOLIVE, Cancelled) AND issuetype in (Bug, \"TECH DEBT\")", "Jira JQL to retrieve the known issues")
 	viper.BindPFlag(JiraKnownIssuesJQL, cmd.PersistentFlags().Lookup(JiraKnownIssuesJQL))
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+		viper.AddConfigPath(home)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName(".jig")
+	}
+
+	viper.AutomaticEnv()
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Fprintln(os.Stderr, "using config file:", viper.ConfigFileUsed())
+	}
 }
 
 func addJiraOpt(label string, value string, opts *[]issuetrackers.JiraOpt, opt func(string, string) issuetrackers.JiraOpt) error {
@@ -172,24 +190,26 @@ func ConfigureJira() (*issuetrackers.Jira, error) {
 	return &jiraTracker, err
 }
 
-func ConfigureRepoClient() (entities.Repotracker, error) {
+func ConfigureRepoTracker() (entities.RepoTracker, error) {
 	if GetConfigString(GitURL) == "" || GetConfigString(GitToken) == "" {
 		return nil, fmt.Errorf("gitURL and gitToken are required")
 	}
 	fmt.Printf("using %s -> %s\n", "gitURL", GetConfigString(GitURL))
 
-	git, err := repoclients.NewGitLab(GetConfigString(GitURL), GetConfigString(GitToken))
+	git, err := clients.NewGitLab(GetConfigString(GitURL), GetConfigString(GitToken))
 
 	return git, err
 }
 
-func ConfigureRepoParser() (entities.Repoparser, error) {
-	fmt.Printf("using %s -> %s\n", "customCommitPattern", GetConfigString(CustomCommitPattern))
-	fmt.Printf("using %s -> %v\n", "withCCWithoutScope", GetConfigString(WithCCWithoutScope))
+func ConfigureRepoService(repoClient entities.RepoClient) (entities.RepoService, error) {
+	fmt.Printf("using %s -> %s\n", CustomCommitPattern, GetConfigString(CustomCommitPattern))
+	fmt.Printf("using %s -> %v\n", WithCCWithoutScope, GetConfigString(WithCCWithoutScope))
+	fmt.Printf("using %s -> %v\n", GitMRBranch, GetConfigString(GitMRBranch))
 
-	repoparser, err := parsers.New(GetIssuePatterns(),
-		parsers.WithCustomPattern(GetConfigString(CustomCommitPattern)),
-		parsers.WithKeepCCWithoutScope(GetConfigBool(WithCCWithoutScope)))
+	repoParser, err := repo.New(repoClient, GetIssuePatterns(),
+		repo.WithDefaultMRBranch(GetConfigString(GitMRBranch)),
+		repo.WithCustomPattern(GetConfigString(CustomCommitPattern)),
+		repo.WithKeepCCWithoutScope(GetConfigBool(WithCCWithoutScope)))
 
-	return repoparser, err
+	return repoParser, err
 }

@@ -59,7 +59,7 @@ func NewJira(URL, username, password string, opts ...JiraOpt) (Jira, error) {
 	return j, nil
 }
 
-func (j Jira) GetIssues(_ *entities.Repo, keys []string) ([]entities.Issue, error) {
+func (j Jira) GetIssues(repo *entities.Repo, keys []string) ([]entities.Issue, error) {
 	if len(keys) == 0 {
 		return []entities.Issue{}, nil
 	}
@@ -90,12 +90,14 @@ func (j Jira) GetIssues(_ *entities.Repo, keys []string) ([]entities.Issue, erro
 			subTaskParents = append(subTaskParents, parent.Key)
 			continue
 		}
+
 		issues = append(issues, entities.Issue{
 			Category:     j.extractIssueCategory(issue),
 			IssueKey:     issue.Key,
 			IssueSummary: issue.Fields.Summary,
 			IssueType:    issue.Fields.Type.Name,
 			IssueStatus:  issue.Fields.Status.Name,
+			WebURL:       fmt.Sprintf("%s/browse/%s", j.client.GetBaseURL().Path, issue.Key),
 		})
 	}
 	if len(subTaskParents) == 0 {
@@ -120,6 +122,7 @@ func (j Jira) GetIssues(_ *entities.Repo, keys []string) ([]entities.Issue, erro
 			IssueSummary: issue.Fields.Summary,
 			IssueType:    issue.Fields.Type.Name,
 			IssueStatus:  issue.Fields.Status.Name,
+			WebURL:       fmt.Sprintf("%s/browse/%s", j.client.GetBaseURL().Path, issue.Key),
 		})
 	}
 	return issues, nil
@@ -146,6 +149,9 @@ func (j Jira) extractIssueCategory(ji jira.Issue) entities.IssueCategory {
 }
 
 func (j Jira) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
+	if repo.Project == "" {
+		return nil, nil
+	}
 	component := repo.Component
 	project := repo.Project
 	opt := &jira.SearchOptions{
@@ -184,6 +190,7 @@ func (j Jira) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
 			IssueSummary: issue.Fields.Summary,
 			IssueType:    issue.Fields.Type.Name,
 			IssueStatus:  issue.Fields.Status.Name,
+			WebURL:       fmt.Sprintf("%s/browse/%s", j.client.GetBaseURL().Path, issue.Key),
 		})
 	}
 	return issues, nil

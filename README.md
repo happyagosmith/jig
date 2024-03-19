@@ -15,7 +15,6 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#running-jig-from-command-line">Running Jig from Command Line</a></li>
-        <li><a href="#running-jig-with-docker">Running Jig with Docker</a></li>
         <li><a href="#configuration">Configuration</a></li>
       </ul>
     </li>
@@ -97,7 +96,7 @@ Jig is a tool based on Go text templates. It extracts information from commit me
 
 1. **Accessing Git Repositories**: Jig utilizes the `model.yaml` file to store configuration details necessary for connecting to various Git repositories of the software product. This file also contains `version` and `previousVersion` fields. These fields represent the current and preceding versions of the component, respectively, and are used to parse the commit for the release note. Jig uses a separate configuration file named `config.yaml` to connect to Git and to the issue tracker. The configuration details include the URLs, usernames, and tokens/passwords for the Git repositories and the issue tracker.
 
-2. **Parsing Commit Messages**: Once it has access to the repositories, Jig parses the commit messages. If the commit messages follow a certain format (like the Conventional Commits format), Jig extracts useful information such as the type of the commit (fix, feat, etc.) and a short summary of the changes.
+2. **Parsing Commit Messages**: Once it has access to the repositories, Jig parses the commit messages. If the commit messages follow a certain format (like the Conventional Commits, Closing Pattern or custom format), Jig extracts useful information such as the type of the commit (fix, feat, etc.) and a short summary of the changes.
 
 3. **Linking to Issue Trackers**: If the commit messages contain issue keys, Jig uses these keys to link the commits to issues in the issue tracker (like Jira). This allows Jig to pull in additional information about the changes, such as the issue description, the issue status (open, closed, in progress, etc.).
 
@@ -124,14 +123,6 @@ go install github.com/happyagosmith/jig@latest
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Docker 
-You can create custom Docker images using the provided Dockerfile:
-```shell
-docker build -t jig:latest .
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 # Getting Started
 ## Running Jig from Command Line
 The simplest way to run Jig (assuming the configuration file and the model file are present) is to execute:
@@ -149,25 +140,6 @@ You also have the option to enrich the model.yaml file first without generating 
 ```shell
 jig --config config/.jig.yaml enrich models/model.yaml
 jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml 
-```
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## Running Jig with Docker
-The most straightforward way to run Jig (assuming you're in the root directory of the Git repository and the configuration file is available) is:
-
-```shell
-docker run -v ./examples:/config -v ./examples:/models --rm jig:latest --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 
-```
-
-You might find it useful to redirect the standard output to a file:
-```shell
-docker run -v ./examples:/config -v ./examples:/models --rm jig:latest --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml --withEnrich 2>&1 | tee rn.md
-```
-
-Then, you can use the cat command to extract the lines related to the Release Note:
-
-```shell
-cat rn.md | sed -n '/\#/,$p'
 ```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -258,91 +230,232 @@ Here is an example of the fields that Jig generates:
 
 ```yaml
 generatedValues:
-  features: 
-    service1:
-    - issueKey: AAA-000
-      issueSummary: 'Fix Comment from the issue tracker'
-      issueType: TECH TASK
-      issueStatus: Completata
-      issueTrackerType: JIRA
-      category: CLOSED_FEATURE
-      isbreakingchange: true
+  features:
+    jig-test:
+      - issueTracker: JIRA
+        issueKey: JIRA-123
+        issueSummary: this is a jira story
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: JIRA-123
+          issueSummary: this is a jira story
+          issueType: Story
+          issueStatus: GOLIVE
+          webURL: //browse/JIRA-123
+        repoDetail:
+          id: commit1
+          shortId: short_commit1
+          title: '[JIRA-123] custom pattern'
+          message: |
+            [JIRA-123] custom pattern
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/1
+          origin: commit
+          parsedSummary: custom pattern
+          parsedKey: JIRA-123
+          parsedIssueTracker: JIRA
+          parser: customParser
+      - issueTracker: GIT
+        issueKey: "1"
+        issueSummary: this is the gitlab issue title
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "1"
+          issueSummary: this is the gitlab issue title
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/1
+        repoDetail:
+          id: commit4
+          shortId: short_commit4
+          title: 'feat: closing pattern'
+          message: |-
+            feat: closing pattern
+             closes #1 gitlab issue
+          createdAt: 2024-03-11T14:09:13.026Z
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: SILK
+        issueKey: SILK-222
+        issueSummary: conventional commit
+        issueCategory: CLOSED_FEATURE
+        repoDetail:
+          id: commit3
+          shortId: short_commit3
+          title: 'feat(SILK-222)!: conventional commit'
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/3
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
   bugs:
-    service1:
-    - issueKey: AAA-111
-      issueSummary: 'Fix Comment from the issue tracker'
-      issueType: Bug
-      issueStatus: RELEASED
-      issueTrackerType: JIRA
-      category: FIXED_BUG
-      isBreakingChange: false
-    service2:
-    - issueKey: AAA-222
-      issueSummary: 'Fix Comment from the issue tracker'
-      issueType: Bug
-      issueStatus: FIXED
-      issueTrackerType: JIRA
-      category: FIXED_BUG
-      isBreakingChange: false
-  knownIssues:
-    service2:
-    - issueKey: AAA-333
-      issueType: TECH DEBT
-      issueSummary: To be implemented
-      issueStatus: Da completare
-      issueTrackerType: JIRA
-      category: OTHER
-      isBreakingChange: false
-  breakingChange: 
-    service1:
-    - issueKey: AAA-000
-      issueSummary: 'Fix Comment from the issue tracker'
-      issueType: TECH TASK
-      issueStatus: Completata
-      issueTrackerType: JIRA
-      category: CLOSED_FEATURE
-      isbreakingchange: true
+    jig-test:
+      - issueTracker: JIRA
+        issueKey: JIRA-456
+        issueSummary: this is a jira bug
+        issueCategory: FIXED_BUG
+        issueDetail:
+          extractedCategory: FIXED_BUG
+          issueKey: JIRA-456
+          issueSummary: this is a jira bug
+          issueType: BUG
+          issueStatus: FIXED
+          webURL: //browse/JIRA-456
+        repoDetail:
+          id: commit2
+          shortId: short_commit2
+          title: 'fix(j_JIRA-456): conventional commit bug fixed'
+          message: "fix(j_JIRA-456): conventional commit bug fixed \n"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/2
+          origin: commit
+          parsedSummary: conventional commit bug fixed
+          parsedCategory: BUG_FIX
+          parsedKey: JIRA-456
+          parsedIssueTracker: JIRA
+          parser: conventionalParser
+          parsedType: fix
+      - issueTracker: GIT
+        issueKey: "2"
+        issueSummary: this is the gitlab issue 2 title
+        issueCategory: FIXED_BUG
+        issueDetail:
+          extractedCategory: FIXED_BUG
+          issueKey: "2"
+          issueSummary: this is the gitlab issue 2 title
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/2
+        repoDetail:
+          id: "10"
+          shortId: "1"
+          title: this is merge request 1
+          message: 'this is a merge request description that fixes #2'
+          origin: merge_request
+          parsedCategory: BUG_FIX
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+  knownIssues: {}
+  breakingChange:
+    jig-test:
+      - issueTracker: SILK
+        issueKey: SILK-222
+        issueSummary: conventional commit
+        issueCategory: CLOSED_FEATURE
+        repoDetail:
+          id: commit3
+          shortId: short_commit3
+          title: 'feat(SILK-222)!: conventional commit'
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/3
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
   gitRepos:
-  - gitRepoID: 1234
-    label: service1
-    previousVersion: 0.0.1
-    version: 0.0.2
-    checkVersion: '@filepath:$.versions.a'
-    gitRepoURL: https://repo-service1-url
-    gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
-    extractedKeys:
-    - category: BUG_FIX
-      issueKey: AAA-000
-      summary: 'fix comment from git'
-      message: 'fix(j_AAA-000)!: fix comment from git'
-      issueTrackerType: JIRA
-      isbreakingchange: true
-    - issueKey: AAA-111
-      summary: 'fix comment from git'
-      message: '[AAA-111] fix comment from git'
-      issueTrackerType: JIRA
-      isbreakingchange: false
-  - gitRepoID: 5678
-    label: service2
-    jiraComponent: jComponent # used to retrieve the known issues
-    jiraProject: jProject # used to retrieve the known issues
-    previousVersion: 1.2.0
-    version: 1.2.1
-    checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
-    gitURL: https://repo-service2-url/-/releases/1.2.1
-    gitReleaseURL: https://repo-service2-url/-/releases/1.2.1
-    extractedKeys:
-    - category: BUG_FIX
-      issueKey: AAA-222
-      summary: 'fix comment from git'
-      message: 'fix(j_AAA-222): fix comment from git'
-      issueTrackerType: JIRA
-      isbreakingchange: false
-    - issueKey: AAA-333
-      summary: 'comment from git'
-      message: '[AAA-333] comment from git'
-      issueTrackerType: JIRA
-      isbreakingchange: false
+    - label: jig-test
+      gitRepoID: "123"
+      previousVersion: 0.0.1
+      version: 0.0.2
+      checkVersion: '@testdata/version.yaml:$.versions.a'
+      extractedKeys:
+        - id: commit1
+          shortId: short_commit1
+          title: '[JIRA-123] custom pattern'
+          message: |
+            [JIRA-123] custom pattern
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/1
+          origin: commit
+          parsedSummary: custom pattern
+          parsedKey: JIRA-123
+          parsedIssueTracker: JIRA
+          parser: customParser
+        - id: commit2
+          shortId: short_commit2
+          title: 'fix(j_JIRA-456): conventional commit bug fixed'
+          message: "fix(j_JIRA-456): conventional commit bug fixed \n"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/2
+          origin: commit
+          parsedSummary: conventional commit bug fixed
+          parsedCategory: BUG_FIX
+          parsedKey: JIRA-456
+          parsedIssueTracker: JIRA
+          parser: conventionalParser
+          parsedType: fix
+        - id: commit3
+          shortId: short_commit3
+          title: 'feat(SILK-222)!: conventional commit'
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/3
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+        - id: commit4
+          shortId: short_commit4
+          title: 'feat(%222)!: conventional commit'
+          message: "feat(%222)!: conventional commit \n unknown issue tracker"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/4
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: '%222'
+          parsedIssueTracker: NONE
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+        - id: commit4
+          shortId: short_commit4
+          title: 'feat: closing pattern'
+          message: |-
+            feat: closing pattern
+             closes #1 gitlab issue
+          createdAt: 2024-03-11T14:09:13.026Z
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - id: "10"
+          shortId: "1"
+          title: this is merge request 1
+          message: 'this is a merge request description that fixes #2'
+          origin: merge_request
+          parsedCategory: BUG_FIX
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+      hasNewFeature: true
+      hasBugFixed: true    
 ```
 
 ### release note template

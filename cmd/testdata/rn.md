@@ -15,7 +15,7 @@ This is an example of Release Note that uses the generated valuse by jig
 ## NEW FEATUREs
 - |jig-test| this is a jira story JIRA-123
 - |jig-test| this is the gitlab issue title 1
-- |jig-test| conventional commit  SILK-222
+- |jig-test| conventional commit SILK-222
 
 
 or 
@@ -26,18 +26,21 @@ SILK-222: jig-test
 
 
 ## FIXED BUGs
-- |jig-test| this is a jira bug JIRA-456 
+- |jig-test| this is a jira bug JIRA-456
+- |jig-test| this is the gitlab issue 2 title 2 
 
 
 or 
 
  
 JIRA-456: jig-test
+ 
+2: jig-test
 
 
 
 ## BREAKING CHANGES
-- |jig-test| conventional commit  SILK-222 
+- |jig-test| conventional commit SILK-222 
 
 or 
 

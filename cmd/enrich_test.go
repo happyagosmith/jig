@@ -17,6 +17,7 @@ func TestEnrich(t *testing.T) {
 		name           string
 		mockgitcommits string
 		mockgitissues  string
+		mockgitmr      string
 		mockjira       string
 		model          string
 		cmd            string
@@ -26,6 +27,7 @@ func TestEnrich(t *testing.T) {
 			name:           "test enrich",
 			mockgitcommits: "testdata/gitlab-compare.json",
 			mockgitissues:  "testdata/gitlab-issues.json",
+			mockgitmr:      "testdata/gitlab-mergerequest.json",
 			mockjira:       "testdata/jira-issues.json",
 			model:          "testdata/model.yaml",
 			cmd:            "enrich %s",
@@ -65,6 +67,13 @@ func TestEnrich(t *testing.T) {
 						t.Fatal(err)
 					}
 					w.Write(b)
+				} else if r.URL.Path == "/api/v4/projects/123/merge_requests" {
+					w.WriteHeader(200)
+					b, err := os.ReadFile(tt.mockgitmr)
+					if err != nil {
+						t.Fatal(err)
+					}
+					w.Write(b)
 				} else {
 					http.Error(w, "Not found", http.StatusNotFound)
 				}
@@ -81,7 +90,7 @@ func TestEnrich(t *testing.T) {
 			_, err = modelFile.Write(f)
 			assert.NoError(t, err)
 
-			cmdline := fmt.Sprintf(tt.cmd+" --config testdata/config.yaml --jiraURL %s --gitURL %s", modelFile.Name(), jirasrv.URL, gitsrv.URL)
+			cmdline := fmt.Sprintf(tt.cmd+"  --gitMRBranch main --config testdata/config.yaml --jiraURL %s --gitURL %s", modelFile.Name(), jirasrv.URL, gitsrv.URL)
 			fmt.Println("running: " + cmdline)
 
 			args, _ := shell.Parse(cmdline)
@@ -91,7 +100,7 @@ func TestEnrich(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.NotNil(t, gotJiraRequest)
-			assert.Equal(t, 2, len(gotGitRequest))
+			assert.Equal(t, 3, len(gotGitRequest))
 
 			assertEqualContentFile(t, tt.wantModel, modelFile.Name())
 		})

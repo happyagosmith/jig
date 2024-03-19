@@ -12,8 +12,8 @@ import (
 	"github.com/happyagosmith/jig/internal/filehandler/model"
 )
 
-func setVersions() *cobra.Command {
-	updateCmd := &cobra.Command{
+func newSetCmd() *cobra.Command {
+	setCmd := &cobra.Command{
 		Use:   "setVersions",
 		Short: "setVersions [model.yaml]",
 		Long: `The command is designed to automate the process of updating version information 
@@ -57,7 +57,7 @@ services:
 	  version: 0.0.2
 	  checkVersion: '@filepath:$.versions.a'
 	  gitRepoURL: https://repo-service1-url
-      gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
+	  gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
 	- gitRepoID: 5678
 	  jiraComponent: jComponent # used to retrieve the known issues from jira
 	  jiraProject: jProject # used to retrieve the known issues from jira
@@ -65,8 +65,8 @@ services:
 	  previousVersion: 1.2.0
 	  version: 1.2.1
 	  checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
-	  gitRepoURL: https://repo-service1-url/-/releases/1.2.1
-      gitReleaseURL: https://repo-service1-url/-/releases/1.2.1
+	  gitRepoURL: https://repo-service1-url
+	  gitReleaseURL: https://repo-service1-url/-/releases/1.2.1
 `,
 		Args: func(cmd *cobra.Command, args []string) error {
 			return cobra.ExactArgs(1)(cmd, args)
@@ -79,10 +79,13 @@ services:
 			b, err := fl.GetFile(modelPath)
 			CheckErr(cmd, err)
 
-			repoclient, err := ConfigureRepoClient()
+			repoClient, err := ConfigureRepoTracker()
 			CheckErr(cmd, err)
 
-			m, err := model.New(b, model.WithRepoClient(repoclient))
+			repoService, err := ConfigureRepoService(repoClient)
+			CheckErr(cmd, err)
+
+			m, err := model.New(b, model.WithRepoService(repoService))
 			CheckErr(cmd, err)
 
 			err = m.UpdateWithReposVersions(filepath.Dir(modelPath))
@@ -103,5 +106,5 @@ services:
 		},
 	}
 
-	return updateCmd
+	return setCmd
 }
