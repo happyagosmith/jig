@@ -118,6 +118,7 @@ generatedValues:
           shortId: "1"
           title: this is merge request 1
           message: 'this is a merge request description that fixes #2'
+          webURL: http://gitlab.example.com/my/repo/merge_request/1
           origin: merge_request
           parsedCategory: BUG_FIX
           parsedKey: "2"
@@ -223,6 +224,7 @@ generatedValues:
           shortId: "1"
           title: this is merge request 1
           message: 'this is a merge request description that fixes #2'
+          webURL: http://gitlab.example.com/my/repo/merge_request/1
           origin: merge_request
           parsedCategory: BUG_FIX
           parsedKey: "2"

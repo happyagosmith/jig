@@ -106,7 +106,7 @@ func InitConfiguration(cmd *cobra.Command) {
 	cmd.PersistentFlags().Bool(WithCCWithoutScope, false, "if true, extract conventional commit without scope")
 	viper.BindPFlag(WithCCWithoutScope, cmd.PersistentFlags().Lookup(WithCCWithoutScope))
 
-	cmd.PersistentFlags().String(CustomCommitPattern, `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the git commit message to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
+	cmd.PersistentFlags().String(CustomCommitPattern, `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the commit and merge request title to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
 	viper.BindPFlag(CustomCommitPattern, cmd.PersistentFlags().Lookup(CustomCommitPattern))
 
 	cmd.PersistentFlags().String(GitURL, "", "Git base URL")

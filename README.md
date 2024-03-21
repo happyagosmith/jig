@@ -9,6 +9,9 @@
       <a href="#how-jig-works">How Jig Works</a>
     </li>
     <li>
+      <a href="#parsing-mechanisms">Parsing Mechanisms</a>
+    </li>
+    <li>
       <a href="#install">Install</a>
     </li>
     <li>
@@ -107,6 +110,56 @@ Jig is a tool based on Go text templates. It extracts information from commit me
 6. **Generating Release Notes**: Once Jig has all this information and the template is rendered, it generates the release notes. The release notes include a list of all the changes in the new version, grouped by the type of change (features, bug fixes, etc.) and the component they affect. Each change includes the commit message, the issue key, and a link to the issue in the issue tracker for more details.
 
 This process can be automated, so that Jig generates the release notes every time a new version of the software product is released. This saves time and ensures that the release notes are accurate and comprehensive.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+# Parsing Mechanisms
+
+Jig utilizes multiple parsing strategies to extract data from merge requests and commits. The `gitMRBranch` parameter, if specified, denotes the branch that the merge request is being analyzed and processed for. Without this parameter, merge requests will not undergo processing.
+
+The following parsing mechanisms are available:
+
+## Conventional Commit Parsing
+
+This parsing mechanism is used on the title of both the merge request and the commit. It is designed to extract the scope, type, and subject from the commit.
+
+## Closing Pattern Parsing
+
+This parser operates on the descriptions of both the commit and the merge request. If you incorporate certain keywords followed by issue numbers (for example, "Closes #4, #6, Related to #5") in a merge request description or commit, the parser will recognize and extract these issues.
+
+The acceptable keywords include: Close, Closes, Closed, Closing, close, closes, closed, closing, Fix, Fixes, Fixed, Fixing, fix, fixes, fixed, fixing, Resolve, Resolves, Resolved, Resolving, resolve, resolves, resolved, resolving, Implement, Implements, Implemented, Implementing, implement, implements, implemented, implementing.
+
+When the keywords 'close', 'implement' or their variations are used, the issue is categorized as a feature. Conversely, if the keywords 'fix', 'resolve' or their variations are used, the issue is categorized as a bug.
+
+## Custom Pattern Parsing
+
+This parsing mechanism is used on the title based on a custom regular expression pattern that extracts the scope and type, similar to the conventional commit parsing.
+
+This can be configured with the `customCommitPattern` parameter. The pattern should include the named groups scope and subject.
+
+## Issue Tracker Parsing
+
+For each key extracted by the previous parsers, a configurable matching logic is applied to associate each key with its corresponding issue tracker. For instance, the key #1 is identified as a GIT issue, while ABC-123 is identified as a Jira issue. This is configurable.
+
+This can be configured with the `issuePatterns` parameter. Here's an example:
+```yaml
+issuePatterns:
+  - issuetracker: jira
+    pattern: j_(.+)
+  - issuetracker: git
+    pattern: '#(\\d+)
+```
+
+After the issues have been parsed, the corresponding trackers are queried to categorize the issues as either features or bugs. 
+
+For GIT, if the issue has the label 'bug', it is classified as a fixed bug. If it has the label 'feature', it is classified as a closed feature. If the issue does not have a label, it is considered a feature by default.
+
+For Jira, the classification can be configured using the following parameters:
+
+- `--jiraClosedFeatureFilter`: This is a list of filters of type:status that identify the closed features. The default value is "Story:GOLIVE,TECH TASK:Completata".
+- `--jiraFixedBugFilter`: This is a list of filters of type:status that identify the fixed bugs. The default value is "BUG:FIXED,BUG:RELEASED".
+- `--jiraKnownIssuesJQL`: This is a Jira JQL to retrieve the known issues. The default value is "status not in (Done, RELEASED, Fixed, GOLIVE, Cancelled) AND issuetype in (Bug, \"TECH DEBT\")".
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -343,6 +396,7 @@ generatedValues:
           shortId: "1"
           title: this is merge request 1
           message: 'this is a merge request description that fixes #2'
+          webURL: http://gitlab.example.com/my/repo/merge_request/1
           origin: merge_request
           parsedCategory: BUG_FIX
           parsedKey: "2"
@@ -448,6 +502,7 @@ generatedValues:
           shortId: "1"
           title: this is merge request 1
           message: 'this is a merge request description that fixes #2'
+          webURL: http://gitlab.example.com/my/repo/merge_request/1
           origin: merge_request
           parsedCategory: BUG_FIX
           parsedKey: "2"
@@ -455,7 +510,7 @@ generatedValues:
           parser: closingPattern
           parsedType: fix
       hasNewFeature: true
-      hasBugFixed: true    
+      hasBugFixed: true
 ```
 
 ### release note template
