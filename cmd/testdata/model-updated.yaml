@@ -1,0 +1,8 @@
+services:
+  - label: jig-test
+    gitRepoID: "123"
+    previousVersion: 0.0.2
+    version: 0.0.3
+    checkVersion: '@testdata/version.yaml:$.versions.a'
+    gitRepoURL: https://jig-test-url/repo
+    gitReleaseURL: https://jig-test-url/-/releases/0.0.3

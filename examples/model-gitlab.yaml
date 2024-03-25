@@ -1,0 +1,264 @@
+services:
+  - label: jig-demo
+    gitRepoID: "55147809"
+    previousVersion: test
+    version: main
+generatedValues:
+  features:
+    jig-demo:
+      - issueTracker: GIT
+        issueKey: "4"
+        issueSummary: two commits
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "4"
+          issueSummary: two commits
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/4
+        repoDetail:
+          id: "287838676"
+          shortId: "3"
+          title: two commits aaaa
+          message: 'closes #4'
+          createdAt: 2024-03-11T14:31:04.02Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/merge_requests/3
+          origin: merge_request
+          parsedCategory: FEATURE
+          parsedKey: "4"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: GIT
+        issueKey: "3"
+        issueSummary: prova con giulio
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "3"
+          issueSummary: prova con giulio
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/3
+        repoDetail:
+          id: "287833163"
+          shortId: "2"
+          title: one commit
+          message: 'closes #3'
+          createdAt: 2024-03-11T14:10:45.752Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/merge_requests/2
+          origin: merge_request
+          parsedCategory: FEATURE
+          parsedKey: "3"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: GIT
+        issueKey: "2"
+        issueSummary: this is an issue to test the MR
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "2"
+          issueSummary: this is an issue to test the MR
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/2
+        repoDetail:
+          id: "287406791"
+          shortId: "1"
+          title: Resolve "this is an issue to test the MR"
+          message: |-
+            Closes #2
+            aaa
+          createdAt: 2024-03-08T09:59:36.642Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/merge_requests/1
+          origin: merge_request
+          parsedCategory: FEATURE
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: GIT
+        issueKey: "1"
+        issueSummary: this is an issue
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "1"
+          issueSummary: this is an issue
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/1
+        repoDetail:
+          id: 5f91c539669ab5d8f917e548eebd5797843f0656
+          shortId: 5f91c539
+          title: 'ci: Update README.md'
+          message: "ci: Update README.md\r\n\r\nthis commit is to show if it works closes #1"
+          createdAt: 2024-03-07T12:50:28Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/5f91c539669ab5d8f917e548eebd5797843f0656
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+  bugs:
+    jig-demo:
+      - issueTracker: GIT
+        issueKey: "5"
+        issueSummary: bug to fix
+        issueCategory: FIXED_BUG
+        issueDetail:
+          extractedCategory: FIXED_BUG
+          issueKey: "5"
+          issueSummary: bug to fix
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/5
+        repoDetail:
+          id: 2fdba10e4beda96183a003c26274b0aa273bead3
+          shortId: 2fdba10e
+          title: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix #5
+          createdAt: 2024-03-11T23:37:10Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/2fdba10e4beda96183a003c26274b0aa273bead3
+          origin: commit
+          parsedCategory: BUG_FIX
+          parsedKey: "5"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+      - issueTracker: SILK
+        issueKey: silk-123
+        issueSummary: 'doc: Update README.md'
+        issueCategory: FIXED_BUG
+        repoDetail:
+          id: 237effb93be700ceec6a81fffa4a071bf6533c61
+          shortId: 237effb9
+          title: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix: silk-123
+          createdAt: 2024-03-11T23:39:10Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/237effb93be700ceec6a81fffa4a071bf6533c61
+          origin: commit
+          parsedCategory: BUG_FIX
+          parsedKey: silk-123
+          parsedIssueTracker: SILK
+          parser: closingPattern
+          parsedType: fix
+  knownIssues: {}
+  breakingChange: {}
+  gitRepos:
+    - label: jig-demo
+      gitRepoID: "55147809"
+      previousVersion: test
+      version: main
+      extractedKeys:
+        - id: 5f91c539669ab5d8f917e548eebd5797843f0656
+          shortId: 5f91c539
+          title: 'ci: Update README.md'
+          message: "ci: Update README.md\r\n\r\nthis commit is to show if it works closes #1"
+          createdAt: 2024-03-07T12:50:28Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/5f91c539669ab5d8f917e548eebd5797843f0656
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - id: 2be6a6701de7b616d1dc39da65ee562973f2fa58
+          shortId: 2be6a670
+          title: Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'
+          message: |-
+            Merge branch '2-this-is-an-issue-to-test-the-mr' into 'main'
+
+            Resolve "this is an issue to test the MR"
+
+            Closes #2
+
+            See merge request happyagosmith/jig-demo!1
+          createdAt: 2024-03-08T09:59:36Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/2be6a6701de7b616d1dc39da65ee562973f2fa58
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - id: 2fdba10e4beda96183a003c26274b0aa273bead3
+          shortId: 2fdba10e
+          title: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix #5
+          createdAt: 2024-03-11T23:37:10Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/2fdba10e4beda96183a003c26274b0aa273bead3
+          origin: commit
+          parsedCategory: BUG_FIX
+          parsedKey: "5"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+        - id: 237effb93be700ceec6a81fffa4a071bf6533c61
+          shortId: 237effb9
+          title: 'doc: Update README.md'
+          message: |-
+            doc: Update README.md
+
+            fix: silk-123
+          createdAt: 2024-03-11T23:39:10Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/commit/237effb93be700ceec6a81fffa4a071bf6533c61
+          origin: commit
+          parsedCategory: BUG_FIX
+          parsedKey: silk-123
+          parsedIssueTracker: SILK
+          parser: closingPattern
+          parsedType: fix
+        - id: "287838676"
+          shortId: "3"
+          title: two commits aaaa
+          message: 'closes #4'
+          createdAt: 2024-03-11T14:31:04.02Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/merge_requests/3
+          origin: merge_request
+          parsedCategory: FEATURE
+          parsedKey: "4"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - id: "287833163"
+          shortId: "2"
+          title: one commit
+          message: 'closes #3'
+          createdAt: 2024-03-11T14:10:45.752Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/merge_requests/2
+          origin: merge_request
+          parsedCategory: FEATURE
+          parsedKey: "3"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - id: "287406791"
+          shortId: "1"
+          title: Resolve "this is an issue to test the MR"
+          message: |-
+            Closes #2
+            aaa
+          createdAt: 2024-03-08T09:59:36.642Z
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/merge_requests/1
+          origin: merge_request
+          parsedCategory: FEATURE
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      hasNewFeature: true
+      hasBugFixed: true

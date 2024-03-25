@@ -4,216 +4,80 @@ Copyright © 2023 Happy Smith happyagosmith@gmail.com
 package cmd
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/happyagosmith/jig/internal/git"
-	"github.com/happyagosmith/jig/internal/model"
-	"github.com/happyagosmith/jig/internal/trackers"
+	"github.com/happyagosmith/jig/internal/filehandler/model"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-func addJiraOpt(label string, value string, opts *[]trackers.JiraOpt, opt func(string, string) trackers.JiraOpt) {
-	fmt.Printf("using %s -> %s\n", label, value)
-	filters := strings.Split(value, ",")
-	if len(filters) == 0 {
-		CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
-	}
-	for _, cff := range filters {
-		f := strings.Split(cff, ":")
-		if len(f) != 2 {
-			CheckErr(fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label))
-		}
-		*opts = append(*opts, opt(f[0], f[1]))
-	}
-}
+func EnrichModel(cmd *cobra.Command, b []byte) []byte {
+	jiraTracker, err := ConfigureJira()
+	CheckErr(cmd, err)
 
-func ConfigureJira() trackers.Jira {
-	jiraURL := viper.GetString("jiraURL")
-	jiraUsername := viper.GetString("jiraUsername")
-	jiraPassword := viper.GetString("jiraPassword")
+	repoTracker, err := ConfigureRepoTracker()
+	CheckErr(cmd, err)
 
-	if jiraURL == "" || jiraUsername == "" || jiraPassword == "" {
-		CheckErr(fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required"))
-	}
+	repoService, err := ConfigureRepoService(repoTracker)
+	CheckErr(cmd, err)
 
-	var opts []trackers.JiraOpt
-	addJiraOpt("jiraClosedFeatureFilter", viper.GetString("jiraClosedFeatureFilter"), &opts, trackers.WithClosedFeatureFilter)
-	addJiraOpt("jiraFixedBugFilter", viper.GetString("jiraFixedBugFilter"), &opts, trackers.WithFixedBugFilter)
-	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", viper.GetString("jiraKnownIssuesJQL"))
-	fmt.Printf("using %s -> %s\n", "jiraURL", viper.GetString("jiraURL"))
-
-	opts = append(opts, trackers.WithKnownIssueJql(viper.GetString("jiraKnownIssuesJQL")))
-	jiraTracker, err := trackers.NewJira(
-		viper.GetString("jiraURL"),
-		viper.GetString("jiraUsername"),
-		viper.GetString("jiraPassword"),
-		opts...,
+	model, err := model.New(b,
+		model.WithRepoService(repoService),
+		model.WithIssueTracker("JIRA", jiraTracker),
+		model.WithIssueTracker("GIT", repoTracker),
+		model.WithIssueTracker("SILK", nil),
 	)
-	CheckErr(err)
+	CheckErr(cmd, err)
 
-	return jiraTracker
-}
-
-func ConfigureVCS() (model.VCS, error) {
-	gitURL := viper.GetString("gitURL")
-	gitToken := viper.GetString("gitToken")
-	issuePattern := viper.GetString("issuePattern")
-	customCommitPattern := viper.GetString("customCommitPattern")
-	withCCWithoutScope := viper.GetBool("withCCWithoutScope")
-
-	if gitURL == "" || gitToken == "" {
-		CheckErr(fmt.Errorf("gitURL and gitToken are required"))
-	}
-	fmt.Printf("using %s -> %s\n", "gitURL", gitURL)
-	fmt.Printf("using %s -> %s\n", "issuePattern", issuePattern)
-	fmt.Printf("using %s -> %s\n", "customCommitPattern", customCommitPattern)
-	fmt.Printf("using %s -> %v\n", "withCCWithoutScope", withCCWithoutScope)
-
-	git, err := git.NewClient(gitURL, gitToken, issuePattern, git.WithCustomPattern(customCommitPattern), git.WithKeepCCWithoutScope(withCCWithoutScope))
-	if err != nil {
-		return nil, err
-	}
-	CheckErr(err)
-
-	return git, nil
-}
-
-func EnrichModel(b []byte) []byte {
-	jiraTracker := ConfigureJira()
-	vcs, err := ConfigureVCS()
-	CheckErr(err)
-
-	model, err := model.New(b, model.WithVCS(vcs),
-		model.WithIssueTracker(jiraTracker))
-	CheckErr(err)
-
-	err = model.EnrichWithGit()
-	CheckErr(err)
+	err = model.EnrichWithRepos()
+	CheckErr(cmd, err)
 
 	err = model.EnrichWithIssueTrackers()
-	CheckErr(err)
+	CheckErr(cmd, err)
 
 	b, err = model.Yaml()
-	CheckErr(err)
+	CheckErr(cmd, err)
 
 	return b
 }
 
+//go:embed testdata/model.yaml
+var modelExample []byte
+
+//go:embed testdata/model-enriched.yaml
+var enrichedModelExample []byte
+
 func newEnrichCmd() *cobra.Command {
+
 	enrichCmd := &cobra.Command{
 		Use:   "enrich [model.yaml]",
 		Short: "Enrich the model.yaml file with the generated values extracted from Git and Jira.",
-		Long: `Enrich the model.yaml file with the generated values extracted from Git and Jira.
+		Long: fmt.Sprintf(`Enrich the model.yaml file with the generated values extracted from Git and Jira.
 
 The model.yaml file should include the list "gitRepo" with an element for each repo 
 to be processed. Following an example:	
-    services:
-    - gitRepoID: xxx           # id of the gitLab repo
-      previousVersion: 1.0.0   # tag from which process the commits
-      version: 2.0.0           # tag to which process the commits 
-      label: service1          # label to assign to the gitLab repo
+%s
 	  
 The file model.yaml will be enriched with the key "generatedValues" including the values 
 extracted from Git and Jira. Following an example:
 
-generatedValues:
-    features: 
-    	service1:
-    	- issueKey: AAA-000
-          issueSummary: 'Fix Comment from the issue tracker'
-          issueType: TECH TASK
-          issueStatus: Completata
-          issueTrackerType: JIRA
-          category: CLOSED_FEATURE
-          isbreakingchange: true
-    bugs:
-    	service1:
-    	- issueKey: AAA-111
-          issueSummary: 'Fix Comment from the issue tracker'
-          issueType: Bug
-          issueStatus: RELEASED
-          issueTrackerType: JIRA
-          category: FIXED_BUG
-          isBreakingChange: false
-    	service2:
-    	- issueKey: AAA-222
-          issueSummary: 'Fix Comment from the issue tracker'
-          issueType: Bug
-          issueStatus: FIXED
-          issueTrackerType: JIRA
-          category: FIXED_BUG
-          isBreakingChange: false
-    knownIssues:
-    	service2:
-    	- issueKey: AAA-333
-          issueType: TECH DEBT
-          issueSummary: To be implemented
-          issueStatus: Da completare
-          issueTrackerType: JIRA
-          category: OTHER
-          isBreakingChange: false
-    breakingChange: 
-    	service1:
-    	- issueKey: AAA-000
-          issueSummary: 'Fix Comment from the issue tracker'
-          issueType: TECH TASK
-          issueStatus: Completata
-          issueTrackerType: JIRA
-          category: CLOSED_FEATURE
-          isbreakingchange: true
-    gitRepos:
-      - gitRepoID: 1234
-    	label: service1
-    	previousVersion: 0.0.1
-    	version: 0.0.2
-    	extractedKeys:
-    	- category: BUG_FIX
-    	  issueKey: AAA-000
-    	  summary: 'fix comment from git'
-    	  message: 'fix(j_AAA-000)!: fix comment from git'
-    	  issueTrackerType: JIRA
-    	  isbreakingchange: true
-    	- issueKey: AAA-111
-    	  summary: 'fix comment from git'
-    	  message: '[AAA-111] fix comment from git'
-    	  issueTrackerType: JIRA
-    	  isbreakingchange: false
-      - gitRepoID: 5678
-    	label: service2
-    	jiraComponent: jComponent # used to retrieve the known issues
-    	jiraProject: jProject # used to retrieve the known issues
-    	previousVersion: 1.2.0
-    	version: 1.2.1
-    	extractedKeys:
-    	- category: BUG_FIX
-    	  issueKey: AAA-222
-    	  summary: 'fix comment from git'
-    	  message: 'fix(j_AAA-222): fix comment from git'
-    	  issueTrackerType: JIRA
-    	  isbreakingchange: false
-    	- issueKey: AAA-333
-    	  summary: 'comment from git'
-    	  message: '[AAA-333] comment from git'
-    	  issueTrackerType: JIRA
-    	  isbreakingchange: false
-`,
+%s
+`, modelExample, enrichedModelExample),
 		Args: func(cmd *cobra.Command, args []string) error {
 			return cobra.ExactArgs(1)(cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := args[0]
-			fl := NewFileLoader(viper.GetString("gitToken"))
+			fl := NewFileLoader(GetConfigString(GitToken))
 
 			cmd.Printf("using model file: %s\n", modelPath)
 			v, err := fl.GetFile(modelPath)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
-			b := EnrichModel(v)
+			b := EnrichModel(cmd, v)
 			err = os.WriteFile(modelPath, b, 0644)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
 			return nil
 		},

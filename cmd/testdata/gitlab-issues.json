@@ -1,0 +1,30 @@
+[
+    {
+       "id":1,
+       "iid":1,
+       "project_id":123,
+       "title":"this is the gitlab issue title",
+       "description":"this is the gitlab issue description",
+       "state":"closed",
+       "labels": [
+        "feature"
+        ],
+       "type":"ISSUE",
+       "issue_type":"issue",
+       "web_url":"https://gitlab.com/happyagosmith/jig-demo/-/issues/1"
+    },
+    {
+      "id":2,
+      "iid":2,
+      "project_id":123,
+      "title":"this is the gitlab issue 2 title",
+      "description":"this is the gitlab issue 2 description",
+      "state":"closed",
+      "labels": [
+       "bug"
+       ],
+      "type":"ISSUE",
+      "issue_type":"issue",
+      "web_url":"https://gitlab.com/happyagosmith/jig-demo/-/issues/2"
+   }
+ ]

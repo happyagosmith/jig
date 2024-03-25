@@ -23,20 +23,41 @@ This is an example of Release Note that uses the generated valuse by jig
 ## NEW FEATUREs
 {{- range  $key, $value := .generatedValues.features }}
 {{- range  $value }}
-- |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}]({{ default .repoDetail.webURL .issueDetail.webURL }})
+- |{{ $key }}| {{ .issueSummary }} {{ .issueKey }}
 {{- end }}
 {{- end }}
+
+
+or 
+
+{{ range (issuesFlatList .generatedValues.features)}} 
+{{- .issueKey}}: {{ .impactedService | join ","}}
+{{end }}
 
 ## FIXED BUGs
 {{- range $key, $value := .generatedValues.bugs }}
 {{- range  $value }}
-- |{{ $key }}| {{ .issueSummary }} [{{ .issueKey }}]({{ default .repoDetail.webURL .issueDetail.webURL }})
+- |{{ $key }}| {{ .issueSummary }} {{ .issueKey }}
 {{- end }}
 {{- end }} 
 
-## KNOWN ISSUEs
-{{- range $key, $value := .generatedValues.knownIssues }}
+
+or 
+
+{{range (issuesFlatList .generatedValues.bugs)}} 
+{{ .issueKey}}: {{ .impactedService | join ","}}
+{{end}}
+
+
+## BREAKING CHANGES
+{{- range $key, $value := .generatedValues.breakingChange }}
 {{- range  $value }}
-- {{ .issueSummary }} [{{ .issueKey }}]({{ default .repoDetail.webURL .issueDetail.webURL }})
+- |{{ $key }}| {{ .issueSummary }} {{ .issueKey }}
 {{- end }}
-{{- end }}
+{{- end }} 
+
+or 
+
+{{range (issuesFlatList .generatedValues.breakingChange)}} 
+{{ .issueKey}}: {{ .impactedService | join ","}}
+{{end}}

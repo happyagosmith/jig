@@ -1,0 +1,56 @@
+{
+    "commit":{
+       "id":"d1b18b624f18f701adab5f5a760f7705647e5e18",
+       "short_id":"d1b18b62"
+    },
+    "commits":[
+       {
+          "id":"commit0",
+          "short_id":"short_commit0",
+          "title":"No reference",
+          "message":"No reference \n",
+          "created_at": "2024-03-11T14:09:13.026Z",
+          "web_url": "http://gitlab.example.com/my/repo/commit/0"
+       },
+       {
+          "id":"commit1",
+          "short_id":"short_commit1",
+          "title":"[JIRA-123] custom pattern",
+          "message":"[JIRA-123] custom pattern\n",
+          "created_at": "2024-03-11T14:09:13.026Z",
+          "web_url": "http://gitlab.example.com/my/repo/commit/1"
+       },
+       {
+         "id":"commit2",
+         "short_id":"short_commit2",
+         "title":"fix(j_JIRA-456): conventional commit bug fixed",
+         "message":"fix(j_JIRA-456): conventional commit bug fixed \n",
+         "created_at": "2024-03-11T14:09:13.026Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/2"
+       },
+       {
+         "id":"commit3",
+         "short_id":"short_commit3",
+         "title":"feat(SILK-222)!: conventional commit",
+         "message":"feat(SILK-222)!: conventional commit \n issue tracker not implemented",
+         "created_at": "2024-03-11T14:09:13.026Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/3"
+      },
+       {
+         "id":"commit4",
+         "short_id":"short_commit4",
+         "title":"feat(%222)!: conventional commit",
+         "message":"feat(%222)!: conventional commit \n unknown issue tracker",
+         "created_at": "2024-03-11T14:09:13.026Z",
+         "web_url": "http://gitlab.example.com/my/repo/commit/4"
+      },
+      {
+         "id":"commit4",
+         "short_id":"short_commit4",
+         "title":"feat: closing pattern",
+         "message":"feat: closing pattern\n closes #1 gitlab issue",
+         "created_at": "2024-03-11T14:09:13.026Z"
+      }
+    ],
+    "diffs":[]
+ }

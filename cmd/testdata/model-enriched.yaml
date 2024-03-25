@@ -1,0 +1,235 @@
+services:
+  - label: jig-test
+    gitRepoID: "123"
+    previousVersion: 0.0.1
+    version: 0.0.2
+    checkVersion: '@testdata/version.yaml:$.versions.a'
+generatedValues:
+  features:
+    jig-test:
+      - issueTracker: JIRA
+        issueKey: JIRA-123
+        issueSummary: this is a jira story
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: JIRA-123
+          issueSummary: this is a jira story
+          issueType: Story
+          issueStatus: GOLIVE
+          webURL: //browse/JIRA-123
+        repoDetail:
+          id: commit1
+          shortId: short_commit1
+          title: '[JIRA-123] custom pattern'
+          message: |
+            [JIRA-123] custom pattern
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/1
+          origin: commit
+          parsedSummary: custom pattern
+          parsedKey: JIRA-123
+          parsedIssueTracker: JIRA
+          parser: customParser
+      - issueTracker: GIT
+        issueKey: "1"
+        issueSummary: this is the gitlab issue title
+        issueCategory: CLOSED_FEATURE
+        issueDetail:
+          extractedCategory: CLOSED_FEATURE
+          issueKey: "1"
+          issueSummary: this is the gitlab issue title
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/1
+        repoDetail:
+          id: commit4
+          shortId: short_commit4
+          title: 'feat: closing pattern'
+          message: |-
+            feat: closing pattern
+             closes #1 gitlab issue
+          createdAt: 2024-03-11T14:09:13.026Z
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+      - issueTracker: SILK
+        issueKey: SILK-222
+        issueSummary: conventional commit
+        issueCategory: CLOSED_FEATURE
+        repoDetail:
+          id: commit3
+          shortId: short_commit3
+          title: 'feat(SILK-222)!: conventional commit'
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/3
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+  bugs:
+    jig-test:
+      - issueTracker: JIRA
+        issueKey: JIRA-456
+        issueSummary: this is a jira bug
+        issueCategory: FIXED_BUG
+        issueDetail:
+          extractedCategory: FIXED_BUG
+          issueKey: JIRA-456
+          issueSummary: this is a jira bug
+          issueType: BUG
+          issueStatus: FIXED
+          webURL: //browse/JIRA-456
+        repoDetail:
+          id: commit2
+          shortId: short_commit2
+          title: 'fix(j_JIRA-456): conventional commit bug fixed'
+          message: "fix(j_JIRA-456): conventional commit bug fixed \n"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/2
+          origin: commit
+          parsedSummary: conventional commit bug fixed
+          parsedCategory: BUG_FIX
+          parsedKey: JIRA-456
+          parsedIssueTracker: JIRA
+          parser: conventionalParser
+          parsedType: fix
+      - issueTracker: GIT
+        issueKey: "2"
+        issueSummary: this is the gitlab issue 2 title
+        issueCategory: FIXED_BUG
+        issueDetail:
+          extractedCategory: FIXED_BUG
+          issueKey: "2"
+          issueSummary: this is the gitlab issue 2 title
+          issueType: issue
+          issueStatus: closed
+          webURL: https://gitlab.com/happyagosmith/jig-demo/-/issues/2
+        repoDetail:
+          id: "10"
+          shortId: "1"
+          title: this is merge request 1
+          message: 'this is a merge request description that fixes #2'
+          webURL: http://gitlab.example.com/my/repo/merge_request/1
+          origin: merge_request
+          parsedCategory: BUG_FIX
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+  knownIssues: {}
+  breakingChange:
+    jig-test:
+      - issueTracker: SILK
+        issueKey: SILK-222
+        issueSummary: conventional commit
+        issueCategory: CLOSED_FEATURE
+        repoDetail:
+          id: commit3
+          shortId: short_commit3
+          title: 'feat(SILK-222)!: conventional commit'
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/3
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+  gitRepos:
+    - label: jig-test
+      gitRepoID: "123"
+      previousVersion: 0.0.1
+      version: 0.0.2
+      checkVersion: '@testdata/version.yaml:$.versions.a'
+      extractedKeys:
+        - id: commit1
+          shortId: short_commit1
+          title: '[JIRA-123] custom pattern'
+          message: |
+            [JIRA-123] custom pattern
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/1
+          origin: commit
+          parsedSummary: custom pattern
+          parsedKey: JIRA-123
+          parsedIssueTracker: JIRA
+          parser: customParser
+        - id: commit2
+          shortId: short_commit2
+          title: 'fix(j_JIRA-456): conventional commit bug fixed'
+          message: "fix(j_JIRA-456): conventional commit bug fixed \n"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/2
+          origin: commit
+          parsedSummary: conventional commit bug fixed
+          parsedCategory: BUG_FIX
+          parsedKey: JIRA-456
+          parsedIssueTracker: JIRA
+          parser: conventionalParser
+          parsedType: fix
+        - id: commit3
+          shortId: short_commit3
+          title: 'feat(SILK-222)!: conventional commit'
+          message: "feat(SILK-222)!: conventional commit \n issue tracker not implemented"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/3
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: SILK-222
+          parsedIssueTracker: SILK
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+        - id: commit4
+          shortId: short_commit4
+          title: 'feat(%222)!: conventional commit'
+          message: "feat(%222)!: conventional commit \n unknown issue tracker"
+          createdAt: 2024-03-11T14:09:13.026Z
+          webURL: http://gitlab.example.com/my/repo/commit/4
+          origin: commit
+          parsedSummary: conventional commit
+          parsedCategory: FEATURE
+          parsedKey: '%222'
+          parsedIssueTracker: NONE
+          parser: conventionalParser
+          parsedType: feat
+          isBreakingChange: true
+        - id: commit4
+          shortId: short_commit4
+          title: 'feat: closing pattern'
+          message: |-
+            feat: closing pattern
+             closes #1 gitlab issue
+          createdAt: 2024-03-11T14:09:13.026Z
+          origin: commit
+          parsedCategory: FEATURE
+          parsedKey: "1"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: close
+        - id: "10"
+          shortId: "1"
+          title: this is merge request 1
+          message: 'this is a merge request description that fixes #2'
+          webURL: http://gitlab.example.com/my/repo/merge_request/1
+          origin: merge_request
+          parsedCategory: BUG_FIX
+          parsedKey: "2"
+          parsedIssueTracker: GIT
+          parser: closingPattern
+          parsedType: fix
+      hasNewFeature: true
+      hasBugFixed: true

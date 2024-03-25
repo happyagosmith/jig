@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	releaseNote "github.com/happyagosmith/jig/internal/releasenote"
+	releaseNote "github.com/happyagosmith/jig/internal/filehandler/releasenote"
 )
 
 func newGenerateCmd() *cobra.Command {
@@ -28,17 +28,17 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 			modelPath := viper.GetString("model")
 			tplPath := args[0]
 
-			fl := NewFileLoader(viper.GetString("gitToken"))
+			fl := NewFileLoader(GetConfigString(GitToken))
 			cmd.Printf("using model file: %s\n", modelPath)
 			v, err := fl.GetFile(modelPath)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
 			cmd.Printf("using template file: %s\n", tplPath)
 			tpl, err := fl.GetFile(tplPath)
-			CheckErr(err)
+			CheckErr(cmd, err)
 
 			if enrich := viper.GetBool("withEnrich"); enrich {
-				v = EnrichModel(v)
+				v = EnrichModel(cmd, v)
 			}
 
 			output := os.Stdout
@@ -52,7 +52,7 @@ the data extracted from Git and Jira. Refer to the help of the enrich subcommand
 			}
 
 			err = releaseNote.Generate(string(tpl), v, output)
-			CheckErr(err)
+			CheckErr(cmd, err)
 			if outputPath != "" {
 				fmt.Printf("\nrelease notes generated successfully at %s\n", outputPath)
 				return nil
