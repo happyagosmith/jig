@@ -17,7 +17,7 @@ generatedValues:
           issueSummary: this is a jira story
           issueType: Story
           issueStatus: GOLIVE
-          webURL: //browse/JIRA-123
+          webURL: /browse/JIRA-123
         repoDetail:
           id: commit1
           shortId: short_commit1
@@ -87,7 +87,7 @@ generatedValues:
           issueSummary: this is a jira bug
           issueType: BUG
           issueStatus: FIXED
-          webURL: //browse/JIRA-456
+          webURL: /browse/JIRA-456
         repoDetail:
           id: commit2
           shortId: short_commit2
