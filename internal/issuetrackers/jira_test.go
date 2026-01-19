@@ -1,6 +1,7 @@
 package issuetrackers_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,13 +23,13 @@ func TestJiraGetKnownIssues(t *testing.T) {
 			name:          "test jira GetKnownIssues1",
 			project:       "project",
 			component:     "component",
-			expectedQuery: "jql=key%3Dvalue+and+project+%3D+%22project%22+and+component+%3D+%22component%22&maxResults=1000",
+			expectedQuery: "jql=key%3Dvalue+and+project+%3D+%22project%22+and+component+%3D+%22component%22&maxResults=1000&startAt=0",
 		},
 		{
 			name:          "test jira GetKnownIssues3",
 			project:       "project",
 			component:     "",
-			expectedQuery: "jql=key%3Dvalue+and+project+%3D+%22project%22&maxResults=1000",
+			expectedQuery: "jql=key%3Dvalue+and+project+%3D+%22project%22&maxResults=1000&startAt=0",
 		},
 	}
 
@@ -47,7 +48,7 @@ func TestJiraGetKnownIssues(t *testing.T) {
 				issuetrackers.WithKnownIssueJql("key=value"))
 			assert.NoError(t, err, "NewJira error must be nil")
 
-			_, err = j.GetKnownIssues(&entities.Repo{Project: tt.project, Component: tt.component})
+			_, err = j.GetKnownIssues(context.Background(), &entities.Repo{Project: tt.project, Component: tt.component})
 			assert.NoError(t, err, "GetIssues error must be nil")
 			assert.Equal(t, tt.expectedQuery, gotRequest.URL.RawQuery)
 		})
@@ -72,7 +73,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues(&entities.Repo{}, []string{})
+		i, err := jira.GetIssues(context.Background(), &entities.Repo{}, []string{})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, len(i) == 0)
@@ -92,7 +93,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues(&entities.Repo{}, []string{"test"})
+		i, err := jira.GetIssues(context.Background(), &entities.Repo{}, []string{"test"})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, i[0].Category == entities.OTHER)
@@ -118,7 +119,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues(&entities.Repo{}, []string{"test"})
+		i, err := jira.GetIssues(context.Background(), &entities.Repo{}, []string{"test"})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, len(i) == 2)
@@ -137,7 +138,7 @@ func TestJira(t *testing.T) {
 			issuetrackers.WithKnownIssueJql("key=value"))
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		issues, err := j.GetKnownIssues(&entities.Repo{Project: "TEST", Component: ""})
+		issues, err := j.GetKnownIssues(context.Background(), &entities.Repo{Project: "TEST", Component: ""})
 		assert.NoError(t, err, "GetIssues error must be nil")
 		assert.Equal(t, 5, len(issues))
 		assert.Equal(t, entities.CLOSED_FEATURE, issues[0].Category)
@@ -156,7 +157,7 @@ func TestJira(t *testing.T) {
 		jira, err := issuetrackers.NewJira(srv.URL, "jiraUsername", "jiraPassword")
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		_, err = jira.GetIssues(&entities.Repo{}, []string{"test"})
+		_, err = jira.GetIssues(context.Background(), &entities.Repo{}, []string{"test"})
 		assert.NotNil(t, err, "GetIssues should return error")
 	})
 

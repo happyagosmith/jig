@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -235,7 +236,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo *entities.Repo) error {
 
 		if len(keys) != 0 {
 			fmt.Printf("retrieving issues info from the issues tracker \"%s\" for the repo \"%s\"\n", issuesTracker.label, repo.Label)
-			issues, err := issuesTracker.it.GetIssues(repo, keys)
+			issues, err := issuesTracker.it.GetIssues(context.Background(), repo, keys)
 			if err != nil {
 				return err
 			}
@@ -256,7 +257,7 @@ func (m *Model) enrichRepoWithIssueTracker(repo *entities.Repo) error {
 			repo.HasBugFixed = repo.HasBugFixed || hasBugFixed
 		}
 
-		knownIssues, err := issuesTracker.it.GetKnownIssues(repo)
+		knownIssues, err := issuesTracker.it.GetKnownIssues(context.Background(), repo)
 		if err != nil {
 			return err
 		}

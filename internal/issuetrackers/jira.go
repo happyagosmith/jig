@@ -1,10 +1,14 @@
 package issuetrackers
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 
-	"github.com/andygrunwald/go-jira"
+	v2 "github.com/ctreminiom/go-atlassian/jira/v3"
+	"github.com/ctreminiom/go-atlassian/pkg/infra/models"
 	"github.com/happyagosmith/jig/internal/entities"
 )
 
@@ -14,7 +18,7 @@ type jiraFilter struct {
 }
 
 type Jira struct {
-	client               *jira.Client
+	client               *v2.Client
 	closedFeatureFilters []jiraFilter
 	fixedBugFilters      []jiraFilter
 	jqlKnownIssue        string
@@ -41,15 +45,12 @@ func WithKnownIssueJql(jql string) JiraOpt {
 }
 
 func NewJira(URL, username, password string, opts ...JiraOpt) (Jira, error) {
-	tp := jira.BasicAuthTransport{
-		Username: username,
-		Password: password,
-	}
-
-	client, err := jira.NewClient(tp.Client(), URL)
+	client, err := v2.New(nil, URL)
 	if err != nil {
 		return Jira{}, err
 	}
+
+	client.Auth.SetBasicAuth(username, password)
 
 	j := Jira{client: client}
 	for _, o := range opts {
@@ -59,33 +60,57 @@ func NewJira(URL, username, password string, opts ...JiraOpt) (Jira, error) {
 	return j, nil
 }
 
-func (j Jira) GetIssues(repo *entities.Repo, keys []string) ([]entities.Issue, error) {
+// searchIssuesRaw calls the new /rest/api/3/search/jql endpoint using raw API call
+func (j Jira) searchIssuesRaw(ctx context.Context, jql string, startAt, maxResults int) (*models.IssueSearchScheme, *models.ResponseScheme, error) {
+	// Build the query parameters
+	params := url.Values{}
+	params.Add("jql", jql)
+	params.Add("startAt", fmt.Sprintf("%d", startAt))
+	params.Add("maxResults", fmt.Sprintf("%d", maxResults))
+
+	apiEndpoint := fmt.Sprintf("rest/api/3/search/jql?%s", params.Encode())
+
+	request, err := j.client.NewRequest(ctx, http.MethodGet, apiEndpoint, "", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	searchResult := new(models.IssueSearchScheme)
+	response, err := j.client.Call(request, searchResult)
+	if err != nil {
+		return nil, response, err
+	}
+
+	return searchResult, response, nil
+}
+
+func (j Jira) GetIssues(ctx context.Context, repo *entities.Repo, keys []string) ([]entities.Issue, error) {
 	if len(keys) == 0 {
 		return []entities.Issue{}, nil
 	}
 
 	jql := fmt.Sprintf("issue in (%s)", strings.Join(keys, ","))
-	opt := &jira.SearchOptions{
-		MaxResults: 1000,
-		StartAt:    0,
-	}
 	fmt.Printf("retrieving issues info using JQL \"%s\"\n", jql)
-	jissues, _, err := j.client.Issue.Search(jql, opt)
+
+	searchResult, response, err := j.searchIssuesRaw(ctx, jql, 0, 1000)
 	if err != nil {
-		return nil, err
+		if response != nil {
+			fmt.Printf("Error response from Jira: endpoint=%s, status=%d\n", response.Endpoint, response.Code)
+		}
+		return nil, fmt.Errorf("failed to search issues: %w", err)
 	}
 
-	issues := make([]entities.Issue, 0, len(jissues))
+	issues := make([]entities.Issue, 0, len(searchResult.Issues))
 	isPresent := map[string]bool{}
 
 	subTaskParents := []string{}
-	for _, issue := range jissues {
+	for _, issue := range searchResult.Issues {
 		if isPresent[issue.Key] {
 			continue
 		}
 		isPresent[issue.Key] = true
 		parent := issue.Fields.Parent
-		if issue.Fields.Type.Subtask && parent != nil && parent.Key != "" && !isPresent[parent.Key] {
+		if issue.Fields.IssueType.Subtask && parent != nil && parent.Key != "" && !isPresent[parent.Key] {
 			fmt.Printf("issue %s is a subtask. add parent key %s instead\n", issue.Key, parent.Key)
 			subTaskParents = append(subTaskParents, parent.Key)
 			continue
@@ -95,9 +120,9 @@ func (j Jira) GetIssues(repo *entities.Repo, keys []string) ([]entities.Issue, e
 			Category:     j.extractIssueCategory(issue),
 			IssueKey:     issue.Key,
 			IssueSummary: issue.Fields.Summary,
-			IssueType:    issue.Fields.Type.Name,
+			IssueType:    issue.Fields.IssueType.Name,
 			IssueStatus:  issue.Fields.Status.Name,
-			WebURL:       fmt.Sprintf("%s/browse/%s", j.client.GetBaseURL().Path, issue.Key),
+			WebURL:       fmt.Sprintf("/browse/%s", issue.Key),
 		})
 	}
 	if len(subTaskParents) == 0 {
@@ -106,12 +131,16 @@ func (j Jira) GetIssues(repo *entities.Repo, keys []string) ([]entities.Issue, e
 
 	jql = fmt.Sprintf("issue in (%s)", strings.Join(subTaskParents, ","))
 	fmt.Printf("retrieving issue parents info using JQL \"%s\"\n", jql)
-	pIssues, _, err := j.client.Issue.Search(jql, opt)
+
+	parentSearchResult, response, err := j.searchIssuesRaw(ctx, jql, 0, 1000)
 	if err != nil {
-		return nil, err
+		if response != nil {
+			fmt.Printf("Error response from Jira: endpoint=%s, status=%d\n", response.Endpoint, response.Code)
+		}
+		return nil, fmt.Errorf("failed to search parent issues: %w", err)
 	}
 
-	for _, issue := range pIssues {
+	for _, issue := range parentSearchResult.Issues {
 		if isPresent[issue.Key] {
 			continue
 		}
@@ -120,20 +149,20 @@ func (j Jira) GetIssues(repo *entities.Repo, keys []string) ([]entities.Issue, e
 			Category:     j.extractIssueCategory(issue),
 			IssueKey:     issue.Key,
 			IssueSummary: issue.Fields.Summary,
-			IssueType:    issue.Fields.Type.Name,
+			IssueType:    issue.Fields.IssueType.Name,
 			IssueStatus:  issue.Fields.Status.Name,
-			WebURL:       fmt.Sprintf("%s/browse/%s", j.client.GetBaseURL().Path, issue.Key),
+			WebURL:       fmt.Sprintf("/browse/%s", issue.Key),
 		})
 	}
 	return issues, nil
 }
 
-func (j Jira) extractIssueCategory(ji jira.Issue) entities.IssueCategory {
-	if ji.Fields.Type.Subtask {
+func (j Jira) extractIssueCategory(issue *models.IssueScheme) entities.IssueCategory {
+	if issue.Fields.IssueType.Subtask {
 		return entities.SUB_TASK
 	}
-	issueType := strings.ToUpper(ji.Fields.Type.Name)
-	issueStatus := strings.ToUpper(ji.Fields.Status.Name)
+	issueType := strings.ToUpper(issue.Fields.IssueType.Name)
+	issueStatus := strings.ToUpper(issue.Fields.Status.Name)
 	for _, jf := range j.closedFeatureFilters {
 		if issueType == jf.issueType && issueStatus == jf.issueStatus {
 			return entities.CLOSED_FEATURE
@@ -148,16 +177,13 @@ func (j Jira) extractIssueCategory(ji jira.Issue) entities.IssueCategory {
 	return entities.OTHER
 }
 
-func (j Jira) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
+func (j Jira) GetKnownIssues(ctx context.Context, repo *entities.Repo) ([]entities.Issue, error) {
 	if repo.Project == "" {
 		return nil, nil
 	}
 	component := repo.Component
 	project := repo.Project
-	opt := &jira.SearchOptions{
-		MaxResults: 1000,
-		StartAt:    0,
-	}
+
 	jqls := []string{}
 	if j.jqlKnownIssue != "" {
 		jqls = append(jqls, j.jqlKnownIssue)
@@ -177,20 +203,24 @@ func (j Jira) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
 
 	jql := strings.Join(jqls, " and ")
 	fmt.Printf("\nretrieving known issues using Jira jql \"%s\"\n", jql)
-	jIssues, _, err := j.client.Issue.Search(jql, opt)
+
+	searchResult, response, err := j.searchIssuesRaw(ctx, jql, 0, 1000)
 	if err != nil {
-		return nil, err
+		if response != nil {
+			fmt.Printf("Error response from Jira: endpoint=%s, status=%d\n", response.Endpoint, response.Code)
+		}
+		return nil, fmt.Errorf("failed to search known issues: %w", err)
 	}
 
-	issues := make([]entities.Issue, 0, len(jIssues))
-	for _, issue := range jIssues {
+	issues := make([]entities.Issue, 0, len(searchResult.Issues))
+	for _, issue := range searchResult.Issues {
 		issues = append(issues, entities.Issue{
 			Category:     j.extractIssueCategory(issue),
 			IssueKey:     issue.Key,
 			IssueSummary: issue.Fields.Summary,
-			IssueType:    issue.Fields.Type.Name,
+			IssueType:    issue.Fields.IssueType.Name,
 			IssueStatus:  issue.Fields.Status.Name,
-			WebURL:       fmt.Sprintf("%s/browse/%s", j.client.GetBaseURL().Path, issue.Key),
+			WebURL:       fmt.Sprintf("/browse/%s", issue.Key),
 		})
 	}
 	return issues, nil

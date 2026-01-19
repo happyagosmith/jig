@@ -7,7 +7,6 @@
 *.dll
 *.so
 *.dylib
-
 # Test binary, built with `go test -c`
 *.test
 
@@ -21,3 +20,6 @@
 go.work
 .vscode/
 dist/
+
+# config files
+*jig.yaml

@@ -1,6 +1,7 @@
 package model_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -152,12 +153,12 @@ type MockIssueTracker struct {
 	mock.Mock
 }
 
-func (m *MockIssueTracker) GetIssues(_ *entities.Repo, keys []string) ([]entities.Issue, error) {
+func (m *MockIssueTracker) GetIssues(_ context.Context, _ *entities.Repo, keys []string) ([]entities.Issue, error) {
 	args := m.Called(keys)
 	return args.Get(0).([]entities.Issue), args.Error(1)
 }
 
-func (m *MockIssueTracker) GetKnownIssues(repo *entities.Repo) ([]entities.Issue, error) {
+func (m *MockIssueTracker) GetKnownIssues(_ context.Context, repo *entities.Repo) ([]entities.Issue, error) {
 	args := m.Called(repo)
 	return args.Get(0).([]entities.Issue), args.Error(1)
 }
