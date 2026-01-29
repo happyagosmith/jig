@@ -67,6 +67,7 @@ func (j Jira) searchIssuesRaw(ctx context.Context, jql string, startAt, maxResul
 	params.Add("jql", jql)
 	params.Add("startAt", fmt.Sprintf("%d", startAt))
 	params.Add("maxResults", fmt.Sprintf("%d", maxResults))
+	params.Add("fields", "*all")
 
 	apiEndpoint := fmt.Sprintf("rest/api/3/search/jql?%s", params.Encode())
 
