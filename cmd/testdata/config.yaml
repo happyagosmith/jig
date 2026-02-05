@@ -1,3 +1,10 @@
 jiraUsername: jiraUsername
 jiraPassword: jiraPassword
 gitToken: gitToken
+issuePatterns:
+  - issueTracker: silk
+    pattern: SILK-\d+|silk-\d+
+  - issueTracker: jira
+    pattern: '[A-Z]+-\d+'
+  - issueTracker: git
+    pattern: '#(\d+)'

@@ -60,16 +60,28 @@ func GetConfigBool(key string) bool {
 }
 
 func GetIssuePatterns() []parsers.IssuePattern {
-	var issuePatterns issuePatternsValue
+	var issuePatterns []parsers.IssuePattern
 
-	str := viper.GetString(IssuePatterns)
-	err := yaml.Unmarshal([]byte(str), &issuePatterns)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		return nil
+	// First try to unmarshal as a structured array (config file format)
+	err := viper.UnmarshalKey(IssuePatterns, &issuePatterns)
+	if err == nil && len(issuePatterns) > 0 {
+		return issuePatterns
 	}
 
-	return issuePatterns
+	// Fallback: try to parse as string (flag format - for backwards compatibility)
+	str := viper.GetString(IssuePatterns)
+	if str != "" {
+		var patternsFromString issuePatternsValue
+		err = yaml.Unmarshal([]byte(str), &patternsFromString)
+		if err != nil {
+			fmt.Printf("error unmarshaling issue patterns from string: %v\n", err)
+			return nil
+		}
+		return patternsFromString
+	}
+
+	fmt.Printf("error unmarshaling issue patterns: %v\n", err)
+	return nil
 }
 
 var cfgFile string

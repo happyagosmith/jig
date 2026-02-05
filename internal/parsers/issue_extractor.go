@@ -8,8 +8,8 @@ import (
 const UNKNOWN_ISSUE_TRACKER = "NONE"
 
 type IssuePattern struct {
-	IssueTracker string
-	Pattern      string
+	IssueTracker string `yaml:"issueTracker" mapstructure:"issueTracker"`
+	Pattern      string `yaml:"pattern" mapstructure:"pattern"`
 }
 
 type IssueExtractor struct {
