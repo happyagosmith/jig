@@ -1,6 +1,6 @@
 module github.com/happyagosmith/jig
 
-go 1.21
+go 1.25
 
 require (
 	github.com/ctreminiom/go-atlassian v1.6.1
