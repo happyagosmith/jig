@@ -124,7 +124,7 @@ func (g Git) GetReleaseURL(gitRepoID, version string) (string, error) {
 	return releaseURL, nil
 }
 
-func (g Git) GetIssues(ctx context.Context, repo *entities.Repo, ids []string) ([]entities.Issue, error) {
+func (g Git) GetIssues(ctx context.Context, repo *entities.EnrichedRepo, ids []string) ([]entities.Issue, error) {
 	intArray := make([]int, len(ids))
 	for i, str := range ids {
 		num, err := strconv.Atoi(str)
@@ -173,7 +173,7 @@ func (g Git) extractIssueCategory(gi gitlab.Issue) entities.IssueCategory {
 	return entities.CLOSED_FEATURE
 }
 
-func (g Git) GetKnownIssues(ctx context.Context, repo *entities.Repo) ([]entities.Issue, error) {
+func (g Git) GetKnownIssues(ctx context.Context, repo *entities.EnrichedRepo) ([]entities.Issue, error) {
 	fmt.Printf("retrieving known issues using GitLab has not been implemented yet\n")
 	return nil, nil
 }

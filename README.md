@@ -224,6 +224,9 @@ services:
   previousVersion: 0.0.1
   version: 0.0.2
   checkVersion: '@filepath:$.versions.a'
+  customAttributes:
+    key1: value1
+    key2: value2
 - gitRepoID: 5678
   jiraComponent: jComponent # used to retrieve the known issues from jira
   jiraProject: jProject # used to retrieve the known issues from jira
@@ -231,6 +234,63 @@ services:
   previousVersion: 1.2.0
   version: 1.2.1
   checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
+  customAttributes:
+    environment: production
+```
+
+#### Custom Attributes
+
+> **⚠️ BREAKING CHANGE**: Custom attributes must now be defined under the `customAttributes` field at the end of each service definition. Previously, custom attributes could be added inline anywhere in the service configuration, but this is no longer supported.
+
+The `customAttributes` field allows you to define custom key-value pairs for each service. These attributes can be used in your templates to provide additional context or metadata about your services.
+
+Example:
+```yaml
+services:
+- gitRepoID: 1234
+  label: service1
+  previousVersion: 0.0.1
+  version: 0.0.2
+  customAttributes:
+    environment: staging
+    team: backend
+```
+
+**Migration Guide:**
+
+If you have existing model.yaml files with inline custom attributes, you need to move them under the `customAttributes` field:
+
+Before (deprecated):
+```yaml
+services:
+- gitRepoID: 1234
+  label: service1
+  myCustomField: value1
+  previousVersion: 0.0.1
+  version: 0.0.2
+  anotherCustomField: value2
+```
+
+After (correct):
+```yaml
+services:
+- gitRepoID: 1234
+  label: service1
+  previousVersion: 0.0.1
+  version: 0.0.2
+  customAttributes:
+    myCustomField: value1
+    anotherCustomField: value2
+```
+
+In your templates, you can access custom attributes like this:
+```go
+{{ range .generatedValues.gitRepos }}
+  Service: {{ .label }}
+  {{ range $key, $value := .customAttributes }}
+    {{ $key }}: {{ $value }}
+  {{ end }}
+{{ end }}
 ```
 
 Each service in the services list represents a different component of the software product, with its own Git repository. The `gitRepoID` is the identifier of the Git repository, and the `version` and `previousVersion` fields indicate the current and previous versions of the component.
@@ -258,6 +318,9 @@ services:
     checkVersion: '@filepath:$.versions.a'
     gitRepoURL: https://repo-service1-url
     gitReleaseURL: https://repo-service1-url/-/releases/0.0.2
+    customAttributes:
+      deployment: kubernetes
+      region: us-east-1
   - gitRepoID: 5678
     jiraComponent: jComponent # used to retrieve the known issues from jira
     jiraProject: jProject # used to retrieve the known issues from jira
@@ -267,6 +330,8 @@ services:
     checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
     gitRepoURL: https://repo-service2-url/-/releases/1.2.1
     gitReleaseURL: https://repo-service2-url/-/releases/1.2.1
+    customAttributes:
+      deployment: docker
 ```
 
 Upon running the command 
@@ -431,6 +496,9 @@ generatedValues:
       previousVersion: 0.0.1
       version: 0.0.2
       checkVersion: '@testdata/version.yaml:$.versions.a'
+      customAttributes:
+        team: platform
+        tier: critical
       extractedKeys:
         - id: commit1
           shortId: short_commit1

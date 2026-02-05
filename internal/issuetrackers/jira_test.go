@@ -48,7 +48,7 @@ func TestJiraGetKnownIssues(t *testing.T) {
 				issuetrackers.WithKnownIssueJql("key=value"))
 			assert.NoError(t, err, "NewJira error must be nil")
 
-			_, err = j.GetKnownIssues(context.Background(), &entities.Repo{Project: tt.project, Component: tt.component})
+			_, err = j.GetKnownIssues(context.Background(), &entities.EnrichedRepo{Repo: entities.Repo{Project: tt.project, Component: tt.component}})
 			assert.NoError(t, err, "GetIssues error must be nil")
 			assert.Equal(t, tt.expectedQuery, gotRequest.URL.RawQuery)
 		})
@@ -73,7 +73,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues(context.Background(), &entities.Repo{}, []string{})
+		i, err := jira.GetIssues(context.Background(), &entities.EnrichedRepo{}, []string{})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, len(i) == 0)
@@ -93,7 +93,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues(context.Background(), &entities.Repo{}, []string{"test"})
+		i, err := jira.GetIssues(context.Background(), &entities.EnrichedRepo{}, []string{"test"})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, i[0].Category == entities.OTHER)
@@ -119,7 +119,7 @@ func TestJira(t *testing.T) {
 		)
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		i, err := jira.GetIssues(context.Background(), &entities.Repo{}, []string{"test"})
+		i, err := jira.GetIssues(context.Background(), &entities.EnrichedRepo{}, []string{"test"})
 		assert.NoError(t, err, "GetIssues error must be nil")
 
 		assert.True(t, len(i) == 2)
@@ -138,7 +138,7 @@ func TestJira(t *testing.T) {
 			issuetrackers.WithKnownIssueJql("key=value"))
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		issues, err := j.GetKnownIssues(context.Background(), &entities.Repo{Project: "TEST", Component: ""})
+		issues, err := j.GetKnownIssues(context.Background(), &entities.EnrichedRepo{Repo: entities.Repo{Project: "TEST", Component: ""}})
 		assert.NoError(t, err, "GetIssues error must be nil")
 		assert.Equal(t, 5, len(issues))
 		assert.Equal(t, entities.CLOSED_FEATURE, issues[0].Category)
@@ -157,7 +157,7 @@ func TestJira(t *testing.T) {
 		jira, err := issuetrackers.NewJira(srv.URL, "jiraUsername", "jiraPassword")
 		assert.NoError(t, err, "NewJira error must be nil")
 
-		_, err = jira.GetIssues(context.Background(), &entities.Repo{}, []string{"test"})
+		_, err = jira.GetIssues(context.Background(), &entities.EnrichedRepo{}, []string{"test"})
 		assert.NotNil(t, err, "GetIssues should return error")
 	})
 

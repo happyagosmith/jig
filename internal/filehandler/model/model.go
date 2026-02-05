@@ -18,7 +18,7 @@ type GeneratedValues struct {
 	Bugs           map[string][]entities.ExtractedIssue `yaml:"bugs"`
 	KnownIssues    map[string][]entities.ExtractedIssue `yaml:"knownIssues"`
 	BreakingChange map[string][]entities.ExtractedIssue `yaml:"breakingChange"`
-	GitRepos       []entities.Repo                      `yaml:"gitRepos"`
+	GitRepos       []entities.EnrichedRepo              `yaml:"gitRepos"`
 }
 
 type Model struct {
@@ -160,8 +160,11 @@ func (m *Model) EnrichWithRepos() error {
 	m.GValues.KnownIssues = map[string][]entities.ExtractedIssue{}
 	m.GValues.BreakingChange = map[string][]entities.ExtractedIssue{}
 
-	m.GValues.GitRepos = []entities.Repo{}
+	m.GValues.GitRepos = []entities.EnrichedRepo{}
 	for _, repo := range m.GitRepos {
+		enrichedRepo := entities.EnrichedRepo{
+			Repo: repo,
+		}
 		if repo.FromTag != "" && repo.FromTag == repo.ToTag {
 			fmt.Printf("same tag %s set in repo.FromTag and repo.ToTag for repo %s. Nothing changed \n", repo.FromTag, repo.Label)
 			continue
@@ -174,11 +177,11 @@ func (m *Model) EnrichWithRepos() error {
 
 		pRecords, err := m.repoService.GetParsedRecords(repo.ID, fc, tc, "")
 		if err != nil {
-			return err
+			return err	
 		}
 
-		repo.ParsedCommits = pRecords
-		m.GValues.GitRepos = append(m.GValues.GitRepos, repo)
+		enrichedRepo.ParsedCommits = pRecords
+		m.GValues.GitRepos = append(m.GValues.GitRepos, enrichedRepo)
 	}
 
 	return nil
@@ -207,7 +210,7 @@ func (m *Model) EnrichWithIssueTrackers() error {
 	return nil
 }
 
-func (m *Model) enrichRepoWithIssueTracker(repo *entities.Repo) error {
+func (m *Model) enrichRepoWithIssueTracker(repo *entities.EnrichedRepo) error {
 	for _, issuesTracker := range m.issueTrackers {
 		fmt.Printf("\nenriching repo %s with issues info from the issues tracker \"%s\"\n", repo.Label, issuesTracker.label)
 		keys := []string{}

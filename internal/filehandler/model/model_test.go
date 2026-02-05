@@ -104,6 +104,9 @@ func TestEnrichWithGit(t *testing.T) {
 				"    gitRepoID: repo1\n" +
 				"    previousVersion: 0.0.0\n" +
 				"    version: 1.0.0\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
 				"generatedValues:\n" +
 				"  features: {}\n" +
 				"  bugs: {}\n" +
@@ -113,7 +116,10 @@ func TestEnrichWithGit(t *testing.T) {
 				"    - label: label1\n" +
 				"      gitRepoID: repo1\n" +
 				"      previousVersion: 0.0.0\n" +
-				"      version: 1.0.0\n",
+				"      version: 1.0.0\n" +
+				"      customAttributes:\n" +
+				"        key1: value1\n" +
+				"        key2: value2\n", 
 		},
 	}
 
@@ -128,6 +134,9 @@ services:
     gitRepoID: %s
     previousVersion: %s
     version: %s
+    customAttributes:
+      key1: value1
+      key2: value2
 `, tt.repoID, tt.previousVersion, tt.version))
 
 			m, err := model.New(values,
@@ -153,12 +162,12 @@ type MockIssueTracker struct {
 	mock.Mock
 }
 
-func (m *MockIssueTracker) GetIssues(_ context.Context, _ *entities.Repo, keys []string) ([]entities.Issue, error) {
+func (m *MockIssueTracker) GetIssues(_ context.Context, _ *entities.EnrichedRepo, keys []string) ([]entities.Issue, error) {
 	args := m.Called(keys)
 	return args.Get(0).([]entities.Issue), args.Error(1)
 }
 
-func (m *MockIssueTracker) GetKnownIssues(_ context.Context, repo *entities.Repo) ([]entities.Issue, error) {
+func (m *MockIssueTracker) GetKnownIssues(_ context.Context, repo *entities.EnrichedRepo) ([]entities.Issue, error) {
 	args := m.Called(repo)
 	return args.Get(0).([]entities.Issue), args.Error(1)
 }
@@ -184,6 +193,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
 				"generatedValues:\n" +
 				"  features: {}\n" +
 				"  bugs: {}\n" +
@@ -196,6 +208,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      customAttributes:\n" +
+				"        key1: value1\n" +
+				"        key2: value2\n" +
 				"      extractedKeys:\n" +
 				"        - parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n",
@@ -220,6 +235,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
 				"generatedValues:\n" +
 				"  features:\n" +
 				"    label1:\n" +
@@ -246,6 +264,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      customAttributes:\n" +
+				"        key1: value1\n" +
+				"        key2: value2\n" +
 				"      extractedKeys:\n" +
 				"        - parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +
@@ -270,6 +291,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
 				"generatedValues:\n" +
 				"  features: {}\n" +
 				"  bugs:\n" +
@@ -296,6 +320,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      customAttributes:\n" +
+				"        key1: value1\n" +
+				"        key2: value2\n" +
 				"      extractedKeys:\n" +
 				"        - parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +
@@ -319,6 +346,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
 				"generatedValues:\n" +
 				"  features: {}\n" +
 				"  bugs: {}\n" +
@@ -341,7 +371,10 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      previousVersion: 0.0.0\n" +
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
-				"      jiraComponent: component\n",
+				"      jiraComponent: component\n" +
+				"      customAttributes:\n" +
+				"        key1: value1\n" +
+				"        key2: value2\n",
 			expectedError: nil,
 		},
 		{
@@ -362,6 +395,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
 				"    jiraComponent: component\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
 				"generatedValues:\n" +
 				"  features:\n" +
 				"    label1:\n" +
@@ -404,6 +440,9 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      version: 1.0.0\n" +
 				"      jiraProject: project\n" +
 				"      jiraComponent: component\n" +
+				"      customAttributes:\n" +
+				"        key1: value1\n" +
+				"        key2: value2\n" +
 				"      extractedKeys:\n" +
 				"        - parsedKey: AAA-000\n" +
 				"          parsedIssueTracker: JIRA\n" +
@@ -430,7 +469,10 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"    previousVersion: 0.0.0\n" +
 				"    version: 1.0.0\n" +
 				"    jiraProject: project\n" +
-				"    jiraComponent: component\n")
+				"    jiraComponent: component\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" )
 
 			m, err := model.New(values,
 				model.WithRepoService(mockRepoParser),

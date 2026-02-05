@@ -85,7 +85,7 @@ func (j Jira) searchIssuesRaw(ctx context.Context, jql string, startAt, maxResul
 	return searchResult, response, nil
 }
 
-func (j Jira) GetIssues(ctx context.Context, repo *entities.Repo, keys []string) ([]entities.Issue, error) {
+func (j Jira) GetIssues(ctx context.Context, repo *entities.EnrichedRepo, keys []string) ([]entities.Issue, error) {
 	if len(keys) == 0 {
 		return []entities.Issue{}, nil
 	}
@@ -178,7 +178,7 @@ func (j Jira) extractIssueCategory(issue *models.IssueScheme) entities.IssueCate
 	return entities.OTHER
 }
 
-func (j Jira) GetKnownIssues(ctx context.Context, repo *entities.Repo) ([]entities.Issue, error) {
+func (j Jira) GetKnownIssues(ctx context.Context, repo *entities.EnrichedRepo) ([]entities.Issue, error) {
 	if repo.Project == "" {
 		return nil, nil
 	}
