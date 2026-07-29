@@ -16,16 +16,16 @@ func EnrichModel(cmd *cobra.Command, b []byte) []byte {
 	jiraTracker, err := ConfigureJira()
 	CheckErr(cmd, err)
 
-	repoTracker, err := ConfigureRepoTracker()
+	trackers, defaultProvider, err := ConfigureRepoTrackers()
 	CheckErr(cmd, err)
 
-	repoService, err := ConfigureRepoService(repoTracker)
+	repoServices, err := ConfigureRepoServices(trackers)
 	CheckErr(cmd, err)
 
 	model, err := model.New(b,
-		model.WithRepoService(repoService),
+		model.WithRepoServices(repoServices, defaultProvider),
 		model.WithIssueTracker("JIRA", jiraTracker),
-		model.WithIssueTracker("GIT", repoTracker),
+		model.WithIssueTracker("GIT", trackers[defaultProvider]),
 		model.WithIssueTracker("SILK", nil),
 	)
 	CheckErr(cmd, err)

@@ -79,13 +79,13 @@ services:
 			b, err := fl.GetFile(modelPath)
 			CheckErr(cmd, err)
 
-			repoClient, err := ConfigureRepoTracker()
+			trackers, defaultProvider, err := ConfigureRepoTrackers()
 			CheckErr(cmd, err)
 
-			repoService, err := ConfigureRepoService(repoClient)
+			repoServices, err := ConfigureRepoServices(trackers)
 			CheckErr(cmd, err)
 
-			m, err := model.New(b, model.WithRepoService(repoService))
+			m, err := model.New(b, model.WithRepoServices(repoServices, defaultProvider))
 			CheckErr(cmd, err)
 
 			err = m.UpdateWithReposVersions(filepath.Dir(modelPath))
