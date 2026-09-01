@@ -202,11 +202,11 @@ jig --config config/.jig.yaml generate examples/rn.tpl -m models/model.yaml
 Jig employs a distinct configuration file to establish connections to Git and the issue tracker. This file contains essential details such as URLs, usernames, and tokens/passwords for both the Git repositories and the issue tracker. Below is a sample configuration:
 
 ```yaml
-jiraURL: "https://jiraURL/"
-jiraUsername: "userEmail"
-jiraPassword: "userJiraToken"
-gitURL: "https://gitlab.com/"
-gitToken: "userGitToken"
+CI_JIRA_URL: "https://jiraURL/"
+CI_JIRA_USERNAME: "userEmail"
+CI_JIRA_PASSWORD: "userJiraToken"
+CI_GITLAB_URL: "https://gitlab.com/"
+CI_GITLAB_TOKEN: "userGitLabToken"
 ```
 
 For a comprehensive list of properties that can be included in the file, refer to the help documentation by executing the following command in your terminal.
@@ -214,6 +214,39 @@ For a comprehensive list of properties that can be included in the file, refer t
 ```shell
 jig --help
 ```
+
+### GitHub
+
+In addition to GitLab, Jig can connect to GitHub (or GitHub Enterprise) as a Git provider. Authentication supports two options:
+
+**Personal access token**
+```yaml
+githubToken: "ghp_xxxxxxxxxxxx"
+```
+If `githubToken` is not set, Jig falls back to the `GITHUB_TOKEN` environment variable, which is convenient in GitHub Actions.
+
+**GitHub App**
+```yaml
+CI_GITHUB_APP_ID: 12345
+CI_GITHUB_INSTALLATION_ID: 67890
+CI_GITHUB_SECRET: |
+  -----BEGIN RSA PRIVATE KEY-----
+  ...
+  -----END RSA PRIVATE KEY-----
+```
+When both `CI_GITHUB_APP_ID` and `CI_GITHUB_INSTALLATION_ID` are set, Jig authenticates as that GitHub App installation using `CI_GITHUB_SECRET` (the App's PEM-encoded private key) instead of a personal token.
+
+For GitHub Enterprise, also set the base URL:
+```yaml
+CI_GITHUB_URL: "https://github.example.com"
+```
+
+If both GitLab (`CI_GITLAB_URL`+`CI_GITLAB_TOKEN`) and GitHub credentials are configured, Jig registers both providers at once. Use `gitProvider` to pick the default one for services that don't specify it explicitly:
+```yaml
+gitProvider: "github" # "gitlab" (default when CI_GITLAB_URL+CI_GITLAB_TOKEN are set) or "github"
+```
+
+Each service in `model.yaml` can also override the provider individually with its own `gitProvider` field — see [model.yaml](#modelyaml) below. Note that for GitHub, `gitRepoID` must be in the `owner/repo` format (e.g. `"happyagosmith/jig"`), rather than the numeric project ID used by GitLab.
 
 ### model.yaml
 Jig uses the `model.yaml` file as configuration details to connect to the different Git repositories of the software product. Here is an example of what this configuration might look like:
@@ -236,6 +269,21 @@ services:
   checkVersion: '@filepath:$.a[?(@.b == ''label'')].c'
   customAttributes:
     environment: production
+```
+
+By default, each service uses the default Git provider (`gitlab`, or `github` if only GitHub credentials are configured, or whatever `gitProvider` in `config.yaml` says). To target a different provider for a specific service, set its own `gitProvider` field. Note that GitHub repositories use the `owner/repo` format for `gitRepoID`, instead of the numeric project ID used by GitLab:
+
+```yaml
+services:
+- gitRepoID: 1234                  # numeric GitLab project ID
+  label: backend
+  previousVersion: 1.0.0
+  version: 1.1.0
+- gitRepoID: happyagosmith/jig      # GitHub uses the "owner/repo" format
+  gitProvider: github
+  label: frontend
+  previousVersion: 2.0.0
+  version: 2.1.0
 ```
 
 #### Custom Attributes
@@ -626,7 +674,7 @@ You can retrieve the raw file of the template and of the model from GitLab using
 https://gitlab.com/api/v4/projects/12345/repository/files/xxxx/raw?ref=xxxx
 ```
 
-Please note that the `PRIVATE-TOKEN` in the request header for authentication is automatically taken from the `gitToken` flag.
+Please note that the `PRIVATE-TOKEN` in the request header for authentication is automatically taken from the `CI_GITLAB_TOKEN` flag.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

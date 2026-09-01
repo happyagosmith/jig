@@ -39,17 +39,17 @@ func (v *issuePatternsValue) String() string {
 const (
 	CustomCommitPattern     = "customCommitPattern"
 	GitProvider             = "gitProvider"
-	GitURL                  = "gitURL"
-	GitToken                = "gitToken"
+	GitLabURL               = "CI_GITLAB_URL"
+	GitLabToken             = "CI_GITLAB_TOKEN"
 	GitHubToken             = "githubToken"
-	GitHubURL               = "githubURL"
-	GitHubAppID             = "githubAppID"
-	GitHubInstallationID    = "githubInstallationID"
-	GitHubSecret            = "githubSecret"
+	GitHubURL               = "CI_GITHUB_URL"
+	GitHubAppID             = "CI_GITHUB_APP_ID"
+	GitHubInstallationID    = "CI_GITHUB_INSTALLATION_ID"
+	GitHubSecret            = "CI_GITHUB_SECRET"
 	GitMRBranch             = "gitMRBranch"
-	JiraURL                 = "jiraURL"
-	JiraUsername            = "jiraUsername"
-	JiraPassword            = "jiraPassword"
+	JiraURL                 = "CI_JIRA_URL"
+	JiraUsername            = "CI_JIRA_USERNAME"
+	JiraPassword            = "CI_JIRA_PASSWORD"
 	JiraClosedFeatureFilter = "jiraClosedFeatureFilter"
 	JiraFixedBugFilter      = "jiraFixedBugFilter"
 	JiraKnownIssuesJQL      = "jiraKnownIssuesJQL"
@@ -131,11 +131,11 @@ func InitConfiguration(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(CustomCommitPattern, `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the commit and merge request title to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
 	viper.BindPFlag(CustomCommitPattern, cmd.PersistentFlags().Lookup(CustomCommitPattern))
 
-	cmd.PersistentFlags().String(GitURL, "", "Git base URL")
-	viper.BindPFlag(GitURL, cmd.PersistentFlags().Lookup(GitURL))
+	cmd.PersistentFlags().String(GitLabURL, "", "GitLab base URL")
+	viper.BindPFlag(GitLabURL, cmd.PersistentFlags().Lookup(GitLabURL))
 
-	cmd.PersistentFlags().String(GitToken, "", "Git token with read REST API permissions (GitLab)")
-	viper.BindPFlag(GitToken, cmd.PersistentFlags().Lookup(GitToken))
+	cmd.PersistentFlags().String(GitLabToken, "", "GitLab token with read REST API permissions")
+	viper.BindPFlag(GitLabToken, cmd.PersistentFlags().Lookup(GitLabToken))
 
 	cmd.PersistentFlags().String(GitHubToken, "", "GitHub token with read REST API permissions")
 	viper.BindPFlag(GitHubToken, cmd.PersistentFlags().Lookup(GitHubToken))
@@ -207,14 +207,14 @@ func addJiraOpt(label string, value string, opts *[]issuetrackers.JiraOpt, opt f
 
 func ConfigureJira() (*issuetrackers.Jira, error) {
 	if GetConfigString(JiraURL) == "" || GetConfigString(JiraUsername) == "" || GetConfigString(JiraPassword) == "" {
-		return nil, fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required")
+		return nil, fmt.Errorf("%s, %s and %s are required", JiraURL, JiraUsername, JiraPassword)
 	}
 
 	var opts []issuetrackers.JiraOpt
 	addJiraOpt("jiraClosedFeatureFilter", GetConfigString(JiraClosedFeatureFilter), &opts, issuetrackers.WithClosedFeatureFilter)
 	addJiraOpt("jiraFixedBugFilter", GetConfigString(JiraFixedBugFilter), &opts, issuetrackers.WithFixedBugFilter)
 	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", GetConfigString(JiraKnownIssuesJQL))
-	fmt.Printf("using %s -> %s\n", "jiraURL", GetConfigString(JiraURL))
+	fmt.Printf("using %s -> %s\n", JiraURL, GetConfigString(JiraURL))
 
 	opts = append(opts, issuetrackers.WithKnownIssueJql(GetConfigString(JiraKnownIssuesJQL)))
 	jiraTracker, err := issuetrackers.NewJira(
@@ -234,12 +234,12 @@ func ConfigureJira() (*issuetrackers.Jira, error) {
 func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultProvider string, err error) {
 	trackers = make(map[string]entities.RepoTracker)
 
-	// GitLab — configured when gitURL + gitToken are present
-	gitURL := GetConfigString(GitURL)
-	gitToken := GetConfigString(GitToken)
-	if gitURL != "" && gitToken != "" {
-		fmt.Printf("using gitURL -> %s\n", gitURL)
-		gl, err := clients.NewGitLab(gitURL, gitToken)
+	// GitLab — configured when CI_GITLAB_URL + CI_GITLAB_TOKEN are present
+	gitlabURL := GetConfigString(GitLabURL)
+	gitlabToken := GetConfigString(GitLabToken)
+	if gitlabURL != "" && gitlabToken != "" {
+		fmt.Printf("using %s -> %s\n", GitLabURL, gitlabURL)
+		gl, err := clients.NewGitLab(gitlabURL, gitlabToken)
 		if err != nil {
 			return nil, "", err
 		}
@@ -251,10 +251,10 @@ func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultP
 	if appID != 0 && installationID != 0 {
 		secret := GetConfigString(GitHubSecret)
 		if secret == "" {
-			return nil, "", fmt.Errorf("githubSecret is required for GitHub App authentication")
+			return nil, "", fmt.Errorf("%s is required for GitHub App authentication", GitHubSecret)
 		}
 		privateKey := []byte(secret)
-		fmt.Printf("using githubAppID -> github app\n")
+		fmt.Printf("using %s -> github app\n", GitHubAppID)
 		gh, err := clients.NewGitHubApp(appID, installationID, privateKey, GetConfigString(GitHubURL))
 		if err != nil {
 			return nil, "", err
@@ -277,7 +277,7 @@ func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultP
 	}
 
 	if len(trackers) == 0 {
-		return nil, "", fmt.Errorf("no git provider configured: set gitURL+gitToken for GitLab or githubToken for GitHub")
+		return nil, "", fmt.Errorf("no git provider configured: set %s+%s for GitLab or %s for GitHub", GitLabURL, GitLabToken, GitHubToken)
 	}
 
 	// Determine default: explicit gitProvider config wins, otherwise pick the

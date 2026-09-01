@@ -9,11 +9,11 @@ import (
 )
 
 type FileLoader struct {
-	gitToken string
+	gitlabToken string
 }
 
-func NewFileLoader(gitToken string) FileLoader {
-	return FileLoader{gitToken: gitToken}
+func NewFileLoader(gitlabToken string) FileLoader {
+	return FileLoader{gitlabToken: gitlabToken}
 }
 
 func (fl FileLoader) GetFile(uri string) ([]byte, error) {
@@ -34,7 +34,7 @@ func (fl FileLoader) getHTTPFile(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	req.Header.Add("PRIVATE-TOKEN", fl.gitToken)
+	req.Header.Add("PRIVATE-TOKEN", fl.gitlabToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

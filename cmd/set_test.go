@@ -51,7 +51,7 @@ func TestSet(t *testing.T) {
 			_, err = modelFile.Write(f)
 			assert.NoError(t, err)
 
-			cmdline := fmt.Sprintf(tt.cmd+"  --config testdata/config.yaml --gitURL %s", modelFile.Name(), gitsrv.URL)
+			cmdline := fmt.Sprintf(tt.cmd+"  --config testdata/config.yaml --CI_GITLAB_URL %s", modelFile.Name(), gitsrv.URL)
 			fmt.Println("running: " + cmdline)
 			args, _ := shell.Parse(cmdline)
 			rootCmd := cmd.NewRootCmd("0.0.1")

@@ -107,7 +107,7 @@ func TestGenerate(t *testing.T) {
 			assert.NoError(t, err)
 			defer os.Remove(outputFile.Name())
 
-			cmdline := fmt.Sprintf(tt.cmd+" --gitMRBranch main --config testdata/config.yaml  -o %s --jiraURL %s --gitURL %s", tt.rntpl, modelFile.Name(), outputFile.Name(), jirasrv.URL, gitsrv.URL)
+			cmdline := fmt.Sprintf(tt.cmd+" --gitMRBranch main --config testdata/config.yaml  -o %s --CI_JIRA_URL %s --CI_GITLAB_URL %s", tt.rntpl, modelFile.Name(), outputFile.Name(), jirasrv.URL, gitsrv.URL)
 			fmt.Println("running: " + cmdline)
 			args, _ := shell.Parse(cmdline)
 			rootCmd := cmd.NewRootCmd("0.0.1")

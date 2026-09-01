@@ -74,7 +74,7 @@ services:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			modelPath := args[0]
 
-			fl := NewFileLoader(GetConfigString(GitToken))
+			fl := NewFileLoader(GetConfigString(GitLabToken))
 			cmd.Printf("using model file: %s\n", modelPath)
 			b, err := fl.GetFile(modelPath)
 			CheckErr(cmd, err)
