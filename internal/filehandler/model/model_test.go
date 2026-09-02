@@ -140,7 +140,7 @@ services:
 `, tt.repoID, tt.previousVersion, tt.version))
 
 			m, err := model.New(values,
-				model.WithRepoService(mockRepoParser))
+				model.WithRepoServices(map[string]entities.RepoService{"gitlab": mockRepoParser}, "gitlab"))
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
@@ -475,7 +475,7 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 				"      key2: value2\n" )
 
 			m, err := model.New(values,
-				model.WithRepoService(mockRepoParser),
+				model.WithRepoServices(map[string]entities.RepoService{"gitlab": mockRepoParser}, "gitlab"),
 				model.WithIssueTracker("JIRA", mockIssueTracker))
 			assert.NoError(t, err)
 
@@ -489,6 +489,124 @@ func TestEnrichWithIssueTrackers(t *testing.T) {
 			bytes, err := m.Yaml()
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedContent, string(bytes))
+		})
+	}
+}
+
+func TestRepoServiceDispatch(t *testing.T) {
+	tests := []struct {
+		name            string
+		yaml            string
+		glRepoID        string
+		ghRepoID        string
+		defaultProvider string
+		noServices      bool
+		wantErr         string
+	}{
+		{
+			name: "Test explicit gitProvider routes to correct service",
+			yaml: "" +
+				"services:\n" +
+				"  - label: label1\n" +
+				"    gitRepoID: repoID1\n" +
+				"    gitProvider: gitlab\n" +
+				"    previousVersion: 0.0.0\n" +
+				"    version: 1.0.0\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n" +
+				"  - label: label2\n" +
+				"    gitRepoID: repoID2\n" +
+				"    gitProvider: github\n" +
+				"    previousVersion: 0.0.0\n" +
+				"    version: 1.0.0\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n",
+			glRepoID:        "repoID1",
+			ghRepoID:        "repoID2",
+			defaultProvider: "gitlab",
+		},
+		{
+			name: "Test missing gitProvider falls back to defaultProvider",
+			yaml: "" +
+				"services:\n" +
+				"  - label: label1\n" +
+				"    gitRepoID: repoID1\n" +
+				"    previousVersion: 0.0.0\n" +
+				"    version: 1.0.0\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n",
+			glRepoID:        "repoID1",
+			defaultProvider: "gitlab",
+		},
+		{
+			name: "Test unknown gitProvider returns error",
+			yaml: "" +
+				"services:\n" +
+				"  - label: label1\n" +
+				"    gitRepoID: repoID\n" +
+				"    gitProvider: unknown\n" +
+				"    previousVersion: 0.0.0\n" +
+				"    version: 1.0.0\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n",
+			defaultProvider: "gitlab",
+			wantErr:         "provider: \"unknown\"",
+		},
+		{
+			name: "Test no services configured returns vcs not set error",
+			yaml: "" +
+				"services:\n" +
+				"  - label: label1\n" +
+				"    gitRepoID: repoID\n" +
+				"    previousVersion: 0.0.0\n" +
+				"    version: 1.0.0\n" +
+				"    customAttributes:\n" +
+				"      key1: value1\n" +
+				"      key2: value2\n",
+			noServices: true,
+			wantErr:    "vcs not set",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			glMock := new(MockRepoParser)
+			ghMock := new(MockRepoParser)
+			if tt.glRepoID != "" {
+				glMock.On("GetParsedRecords", tt.glRepoID, "0.0.0", "1.0.0", "").Return([]entities.ParsedRepoRecord{}, nil)
+			}
+			if tt.ghRepoID != "" {
+				ghMock.On("GetParsedRecords", tt.ghRepoID, "0.0.0", "1.0.0", "").Return([]entities.ParsedRepoRecord{}, nil)
+			}
+
+			var m *model.Model
+			var err error
+			if tt.noServices {
+				m, err = model.New([]byte(tt.yaml))
+			} else {
+				services := map[string]entities.RepoService{"gitlab": glMock, "github": ghMock}
+				m, err = model.New([]byte(tt.yaml), model.WithRepoServices(services, tt.defaultProvider))
+			}
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			err = m.EnrichWithRepos()
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			assert.NoError(t, err)
+			if tt.glRepoID != "" {
+				glMock.AssertCalled(t, "GetParsedRecords", tt.glRepoID, "0.0.0", "1.0.0", "")
+			}
+			if tt.ghRepoID != "" {
+				ghMock.AssertCalled(t, "GetParsedRecords", tt.ghRepoID, "0.0.0", "1.0.0", "")
+			}
 		})
 	}
 }

@@ -28,16 +28,18 @@ type Model struct {
 		label string
 		it    entities.IssuesTracker
 	}
-	repoService entities.RepoService
-	y           *yamlfile.Yaml
+	repoServices    map[string]entities.RepoService
+	defaultProvider string
+	y               *yamlfile.Yaml
 }
 
 type ModelOpt func(*Model)
 
-func WithRepoService(repoService entities.RepoService) ModelOpt {
+func WithRepoServices(services map[string]entities.RepoService, defaultProvider string) ModelOpt {
 	return func(m *Model) {
-		if repoService != nil {
-			m.repoService = repoService
+		if len(services) > 0 {
+			m.repoServices = services
+			m.defaultProvider = defaultProvider
 		}
 	}
 }
@@ -123,18 +125,34 @@ func (m *Model) UpdateWithReposVersions(rootPath string) error {
 	return nil
 }
 
-func (m *Model) UpdateWithReposInfos() error {
-	if m.repoService == nil {
-		return fmt.Errorf("vcs not set")
+func (m *Model) repoServiceFor(repo entities.Repo) (entities.RepoService, error) {
+	if len(m.repoServices) == 0 {
+		return nil, fmt.Errorf("vcs not set")
 	}
-	for i, repo := range m.GitRepos {
+	provider := repo.GitProvider
+	if provider == "" {
+		provider = m.defaultProvider
+	}
+	svc, ok := m.repoServices[provider]
+	if !ok {
+		return nil, fmt.Errorf("no git provider configured for %q (provider: %q)", repo.Label, provider)
+	}
+	return svc, nil
+}
 
-		rUrl, err := m.repoService.GetRepoURL(repo.ID)
+func (m *Model) UpdateWithReposInfos() error {
+	for i, repo := range m.GitRepos {
+		svc, err := m.repoServiceFor(repo)
 		if err != nil {
 			return err
 		}
 
-		vUrl, err := m.repoService.GetReleaseURL(repo.ID, repo.ToTag)
+		rUrl, err := svc.GetRepoURL(repo.ID)
+		if err != nil {
+			return err
+		}
+
+		vUrl, err := svc.GetReleaseURL(repo.ID, repo.ToTag)
 		if err != nil {
 			return err
 		}
@@ -175,9 +193,14 @@ func (m *Model) EnrichWithRepos() error {
 
 		fmt.Printf("\nprocessing %s", repo.String())
 
-		pRecords, err := m.repoService.GetParsedRecords(repo.ID, fc, tc, "")
+		svc, err := m.repoServiceFor(repo)
 		if err != nil {
-			return err	
+			return err
+		}
+
+		pRecords, err := svc.GetParsedRecords(repo.ID, fc, tc, "")
+		if err != nil {
+			return err
 		}
 
 		enrichedRepo.ParsedCommits = pRecords

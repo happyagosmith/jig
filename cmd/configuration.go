@@ -38,8 +38,14 @@ func (v *issuePatternsValue) String() string {
 
 const (
 	CustomCommitPattern     = "customCommitPattern"
-	GitURL                  = "gitURL"
-	GitToken                = "gitToken"
+	GitProvider             = "gitProvider"
+	GitLabURL               = "gitURL"
+	GitLabToken             = "gitToken"
+	GitHubToken             = "githubToken"
+	GitHubURL               = "githubURL"
+	GitHubAppID             = "githubAppID"
+	GitHubInstallationID    = "githubInstallationID"
+	GitHubSecret            = "githubSecret"
 	GitMRBranch             = "gitMRBranch"
 	JiraURL                 = "jiraURL"
 	JiraUsername            = "jiraUsername"
@@ -57,6 +63,10 @@ func GetConfigString(key string) string {
 
 func GetConfigBool(key string) bool {
 	return viper.GetBool(key)
+}
+
+func GetConfigInt64(key string) int64 {
+	return viper.GetInt64(key)
 }
 
 func GetIssuePatterns() []parsers.IssuePattern {
@@ -121,11 +131,26 @@ func InitConfiguration(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(CustomCommitPattern, `\[(?P<scope>[^\]]*)\](?P<subject>.*)`, "Custom pattern to apply on the commit and merge request title to extract the issue keys and the summary. If the message is not a conventional commit message, this custom pattern is applied. The pattern should include the named groups scope and subject")
 	viper.BindPFlag(CustomCommitPattern, cmd.PersistentFlags().Lookup(CustomCommitPattern))
 
-	cmd.PersistentFlags().String(GitURL, "", "Git base URL")
-	viper.BindPFlag(GitURL, cmd.PersistentFlags().Lookup(GitURL))
+	cmd.PersistentFlags().String(GitLabURL, "", "GitLab base URL")
+	viper.BindPFlag(GitLabURL, cmd.PersistentFlags().Lookup(GitLabURL))
 
-	cmd.PersistentFlags().String(GitToken, "", "Git token with read REST API permissions")
-	viper.BindPFlag(GitToken, cmd.PersistentFlags().Lookup(GitToken))
+	cmd.PersistentFlags().String(GitLabToken, "", "GitLab token with read REST API permissions")
+	viper.BindPFlag(GitLabToken, cmd.PersistentFlags().Lookup(GitLabToken))
+
+	cmd.PersistentFlags().String(GitHubToken, "", "GitHub token with read REST API permissions")
+	viper.BindPFlag(GitHubToken, cmd.PersistentFlags().Lookup(GitHubToken))
+
+	cmd.PersistentFlags().String(GitHubURL, "", "GitHub base URL (for GitHub Enterprise, e.g. https://github.example.com)")
+	viper.BindPFlag(GitHubURL, cmd.PersistentFlags().Lookup(GitHubURL))
+
+	cmd.PersistentFlags().Int64(GitHubAppID, 0, "GitHub App ID (for GitHub App authentication)")
+	viper.BindPFlag(GitHubAppID, cmd.PersistentFlags().Lookup(GitHubAppID))
+
+	cmd.PersistentFlags().Int64(GitHubInstallationID, 0, "GitHub App installation ID")
+	viper.BindPFlag(GitHubInstallationID, cmd.PersistentFlags().Lookup(GitHubInstallationID))
+
+	cmd.PersistentFlags().String(GitHubSecret, "", "GitHub App private key PEM content")
+	viper.BindPFlag(GitHubSecret, cmd.PersistentFlags().Lookup(GitHubSecret))
 
 	cmd.PersistentFlags().String(JiraURL, "", "Jira base URL")
 	viper.BindPFlag(JiraURL, cmd.PersistentFlags().Lookup(JiraURL))
@@ -174,7 +199,7 @@ func addJiraOpt(label string, value string, opts *[]issuetrackers.JiraOpt, opt f
 		if len(f) != 2 {
 			return fmt.Errorf("wrong format of %s, expected list type:status separated by coma", label)
 		}
-		*opts = append(*opts, opt(f[0], f[1]))
+		*opts = append(*opts, opt(strings.TrimSpace(f[0]), strings.TrimSpace(f[1])))
 	}
 
 	return nil
@@ -189,7 +214,7 @@ func ConfigureJira() (*issuetrackers.Jira, error) {
 	addJiraOpt("jiraClosedFeatureFilter", GetConfigString(JiraClosedFeatureFilter), &opts, issuetrackers.WithClosedFeatureFilter)
 	addJiraOpt("jiraFixedBugFilter", GetConfigString(JiraFixedBugFilter), &opts, issuetrackers.WithFixedBugFilter)
 	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", GetConfigString(JiraKnownIssuesJQL))
-	fmt.Printf("using %s -> %s\n", "jiraURL", GetConfigString(JiraURL))
+	fmt.Printf("using %s -> %s\n", JiraURL, GetConfigString(JiraURL))
 
 	opts = append(opts, issuetrackers.WithKnownIssueJql(GetConfigString(JiraKnownIssuesJQL)))
 	jiraTracker, err := issuetrackers.NewJira(
@@ -202,26 +227,93 @@ func ConfigureJira() (*issuetrackers.Jira, error) {
 	return &jiraTracker, err
 }
 
-func ConfigureRepoTracker() (entities.RepoTracker, error) {
-	if GetConfigString(GitURL) == "" || GetConfigString(GitToken) == "" {
-		return nil, fmt.Errorf("gitURL and gitToken are required")
+// ConfigureRepoTrackers builds one client per configured provider and returns
+// them in a map keyed by provider name ("gitlab", "github"). The default
+// provider (used for repos without an explicit gitProvider field) is also
+// returned so callers can fall back to it.
+func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultProvider string, err error) {
+	trackers = make(map[string]entities.RepoTracker)
+
+	// GitLab — configured when gitURL+gitToken are present
+	gitlabURL := GetConfigString(GitLabURL)
+	gitlabToken := GetConfigString(GitLabToken)
+	if gitlabURL != "" && gitlabToken != "" {
+		fmt.Printf("using %s -> %s\n", GitLabURL, gitlabURL)
+		gl, err := clients.NewGitLab(gitlabURL, gitlabToken)
+		if err != nil {
+			return nil, "", err
+		}
+		trackers["gitlab"] = gl
 	}
-	fmt.Printf("using %s -> %s\n", "gitURL", GetConfigString(GitURL))
 
-	git, err := clients.NewGitLab(GetConfigString(GitURL), GetConfigString(GitToken))
+	appID := GetConfigInt64(GitHubAppID)
+	installationID := GetConfigInt64(GitHubInstallationID)
+	if appID != 0 && installationID != 0 {
+		secret := GetConfigString(GitHubSecret)
+		if secret == "" {
+			return nil, "", fmt.Errorf("githubSecret is required for GitHub App authentication")
+		}
+		privateKey := []byte(secret)
+		fmt.Printf("using %s -> github app\n", GitHubAppID)
+		gh, err := clients.NewGitHubApp(appID, installationID, privateKey, GetConfigString(GitHubURL))
+		if err != nil {
+			return nil, "", err
+		}
+		trackers["github"] = gh
+	} else {
+		// Fallback to token authentication
+		ghToken := GetConfigString(GitHubToken)
+		if ghToken == "" {
+			ghToken = os.Getenv("GITHUB_TOKEN")
+		}
+		if ghToken != "" {
+			fmt.Printf("using githubToken -> github\n")
+			gh, err := clients.NewGitHub(ghToken)
+			if err != nil {
+				return nil, "", err
+			}
+			trackers["github"] = gh
+		}
+	}
 
-	return git, err
+	if len(trackers) == 0 {
+		return nil, "", fmt.Errorf("no git provider configured: set gitURL+gitToken for GitLab or githubToken for GitHub")
+	}
+
+	// Determine default: explicit gitProvider config wins, otherwise pick the
+	// only configured one (or "gitlab" when both are present).
+	switch GetConfigString(GitProvider) {
+	case "github":
+		if _, ok := trackers["github"]; !ok {
+			return nil, "", fmt.Errorf("gitProvider is \"github\" but githubToken is not set")
+		}
+		defaultProvider = "github"
+	default:
+		if _, ok := trackers["gitlab"]; ok {
+			defaultProvider = "gitlab"
+		} else {
+			defaultProvider = "github"
+		}
+	}
+
+	return trackers, defaultProvider, nil
 }
 
-func ConfigureRepoService(repoClient entities.RepoClient) (entities.RepoService, error) {
+func ConfigureRepoServices(trackers map[string]entities.RepoTracker) (map[string]entities.RepoService, error) {
 	fmt.Printf("using %s -> %s\n", CustomCommitPattern, GetConfigString(CustomCommitPattern))
 	fmt.Printf("using %s -> %v\n", WithCCWithoutScope, GetConfigString(WithCCWithoutScope))
 	fmt.Printf("using %s -> %v\n", GitMRBranch, GetConfigString(GitMRBranch))
 
-	repoParser, err := repo.New(repoClient, GetIssuePatterns(),
-		repo.WithDefaultMRBranch(GetConfigString(GitMRBranch)),
-		repo.WithCustomPattern(GetConfigString(CustomCommitPattern)),
-		repo.WithKeepCCWithoutScope(GetConfigBool(WithCCWithoutScope)))
-
-	return repoParser, err
+	services := make(map[string]entities.RepoService, len(trackers))
+	for provider, client := range trackers {
+		svc, err := repo.New(client, GetIssuePatterns(),
+			repo.WithDefaultMRBranch(GetConfigString(GitMRBranch)),
+			repo.WithCustomPattern(GetConfigString(CustomCommitPattern)),
+			repo.WithKeepCCWithoutScope(GetConfigBool(WithCCWithoutScope)))
+		if err != nil {
+			return nil, err
+		}
+		services[provider] = svc
+	}
+	return services, nil
 }

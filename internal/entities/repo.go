@@ -6,6 +6,7 @@ type Repo struct {
 	Label            string         `yaml:"label,omitempty"`
 	ServiceName      string         `yaml:"serviceName,omitempty"`
 	ID               string         `yaml:"gitRepoID,omitempty"`
+	GitProvider      string         `yaml:"gitProvider,omitempty"`
 	FromTag          string         `yaml:"previousVersion,omitempty"`
 	ToTag            string         `yaml:"version,omitempty"`
 	CheckTag         string         `yaml:"checkVersion,omitempty"`
