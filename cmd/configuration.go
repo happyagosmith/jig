@@ -39,17 +39,17 @@ func (v *issuePatternsValue) String() string {
 const (
 	CustomCommitPattern     = "customCommitPattern"
 	GitProvider             = "gitProvider"
-	GitLabURL               = "CI_GITLAB_URL"
-	GitLabToken             = "CI_GITLAB_TOKEN"
+	GitLabURL               = "gitURL"
+	GitLabToken             = "gitToken"
 	GitHubToken             = "githubToken"
-	GitHubURL               = "CI_GITHUB_URL"
-	GitHubAppID             = "CI_GITHUB_APP_ID"
-	GitHubInstallationID    = "CI_GITHUB_INSTALLATION_ID"
-	GitHubSecret            = "CI_GITHUB_SECRET"
+	GitHubURL               = "githubURL"
+	GitHubAppID             = "githubAppID"
+	GitHubInstallationID    = "githubInstallationID"
+	GitHubSecret            = "githubSecret"
 	GitMRBranch             = "gitMRBranch"
-	JiraURL                 = "CI_JIRA_URL"
-	JiraUsername            = "CI_JIRA_USERNAME"
-	JiraPassword            = "CI_JIRA_PASSWORD"
+	JiraURL                 = "jiraURL"
+	JiraUsername            = "jiraUsername"
+	JiraPassword            = "jiraPassword"
 	JiraClosedFeatureFilter = "jiraClosedFeatureFilter"
 	JiraFixedBugFilter      = "jiraFixedBugFilter"
 	JiraKnownIssuesJQL      = "jiraKnownIssuesJQL"
@@ -207,7 +207,7 @@ func addJiraOpt(label string, value string, opts *[]issuetrackers.JiraOpt, opt f
 
 func ConfigureJira() (*issuetrackers.Jira, error) {
 	if GetConfigString(JiraURL) == "" || GetConfigString(JiraUsername) == "" || GetConfigString(JiraPassword) == "" {
-		return nil, fmt.Errorf("%s, %s and %s are required", JiraURL, JiraUsername, JiraPassword)
+		return nil, fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required")
 	}
 
 	var opts []issuetrackers.JiraOpt
@@ -234,7 +234,7 @@ func ConfigureJira() (*issuetrackers.Jira, error) {
 func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultProvider string, err error) {
 	trackers = make(map[string]entities.RepoTracker)
 
-	// GitLab — configured when CI_GITLAB_URL + CI_GITLAB_TOKEN are present
+	// GitLab — configured when gitURL+gitToken are present
 	gitlabURL := GetConfigString(GitLabURL)
 	gitlabToken := GetConfigString(GitLabToken)
 	if gitlabURL != "" && gitlabToken != "" {
@@ -251,7 +251,7 @@ func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultP
 	if appID != 0 && installationID != 0 {
 		secret := GetConfigString(GitHubSecret)
 		if secret == "" {
-			return nil, "", fmt.Errorf("%s is required for GitHub App authentication", GitHubSecret)
+			return nil, "", fmt.Errorf("githubSecret is required for GitHub App authentication")
 		}
 		privateKey := []byte(secret)
 		fmt.Printf("using %s -> github app\n", GitHubAppID)
@@ -277,7 +277,7 @@ func ConfigureRepoTrackers() (trackers map[string]entities.RepoTracker, defaultP
 	}
 
 	if len(trackers) == 0 {
-		return nil, "", fmt.Errorf("no git provider configured: set %s+%s for GitLab or %s for GitHub", GitLabURL, GitLabToken, GitHubToken)
+		return nil, "", fmt.Errorf("no git provider configured: set gitURL+gitToken for GitLab or githubToken for GitHub")
 	}
 
 	// Determine default: explicit gitProvider config wins, otherwise pick the

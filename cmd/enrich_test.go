@@ -90,7 +90,7 @@ func TestEnrich(t *testing.T) {
 			_, err = modelFile.Write(f)
 			assert.NoError(t, err)
 
-			cmdline := fmt.Sprintf(tt.cmd+"  --gitMRBranch main --config testdata/config.yaml --CI_JIRA_URL %s --CI_GITLAB_URL %s", modelFile.Name(), jirasrv.URL, gitsrv.URL)
+			cmdline := fmt.Sprintf(tt.cmd+"  --gitMRBranch main --config testdata/config.yaml --jiraURL %s --gitURL %s", modelFile.Name(), jirasrv.URL, gitsrv.URL)
 			fmt.Println("running: " + cmdline)
 
 			args, _ := shell.Parse(cmdline)
