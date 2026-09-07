@@ -248,6 +248,26 @@ gitProvider: "github" # "gitlab" (default when gitURL+gitToken are set) or "gith
 
 Each service in `model.yaml` can also override the provider individually with its own `gitProvider` field — see [model.yaml](#modelyaml) below. Note that for GitHub, `gitRepoID` must be in the `owner/repo` format (e.g. `"happyagosmith/jig"`), rather than the numeric project ID used by GitLab.
 
+### Jira
+
+Jig authenticates to Jira with `jiraUsername`/`jiraPassword` (HTTP basic auth, `jiraPassword` being an Atlassian API token, not the account's login password). Since Jig typically runs unattended in a CI pipeline, these credentials should belong to a dedicated **service account** rather than a real person's account, so the release-note pipeline doesn't depend on an individual's identity and doesn't stop working when that person leaves or changes their password.
+
+> Jig doesn't support Jira's OAuth 2.0 (3LO) user-delegated flow: Atlassian issues a new refresh token every time one is used and invalidates the previous one, which requires the caller to persist the rotated token somewhere durable after every run. Without that persistence, OAuth breaks after the first run, which is why a service-account API token is the recommended (and supported) approach for unattended pipelines. Atlassian doesn't offer a non-rotating alternative for 3LO apps.
+
+**Setup steps:**
+
+1. Ask an Atlassian organization admin to create a **service account** (Atlassian's org admin console, under user/account management — distinct from inviting a real person) and grant it read access to the relevant Jira projects. A service account is not tied to an individual, and using one instead of a personal account is Atlassian's recommended pattern for bots/CI integrations.
+2. Sign in as that service account (or have the admin do it) and generate an API token at [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens). Scope the token to just what Jig needs (read-only issue access) rather than granting it full account access.
+3. Store the service account's email as `jiraUsername` and the generated token as `jiraPassword` — as CI secrets, not committed to the repository.
+
+```yaml
+jiraURL: "https://yoursite.atlassian.net"
+jiraUsername: "jig-bot@yourcompany.com" # the service account's email
+jiraPassword: "userJiraToken"           # the API token generated for it
+```
+
+**Token expiration:** since December 15, 2024, Atlassian API tokens expire after at most one year (you choose the lifetime, 1-365 days, when creating one) — there's no option for a token that never expires. Set a reminder to regenerate the token and update the stored secret before it expires, since Jig has no way to renew it automatically.
+
 ### model.yaml
 Jig uses the `model.yaml` file as configuration details to connect to the different Git repositories of the software product. Here is an example of what this configuration might look like:
 ```yaml
