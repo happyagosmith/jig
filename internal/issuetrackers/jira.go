@@ -22,6 +22,7 @@ type Jira struct {
 	closedFeatureFilters []jiraFilter
 	fixedBugFilters      []jiraFilter
 	jqlKnownIssue        string
+	bearerToken          string
 }
 
 type JiraOpt func(*Jira)
@@ -44,17 +45,29 @@ func WithKnownIssueJql(jql string) JiraOpt {
 	}
 }
 
+// WithBearerToken configures the client to authenticate with a bearer token
+// instead of the username/password passed to NewJira.
+func WithBearerToken(token string) JiraOpt {
+	return func(j *Jira) {
+		j.bearerToken = token
+	}
+}
+
 func NewJira(URL, username, password string, opts ...JiraOpt) (Jira, error) {
 	client, err := v2.New(nil, URL)
 	if err != nil {
 		return Jira{}, err
 	}
 
-	client.Auth.SetBasicAuth(username, password)
-
 	j := Jira{client: client}
 	for _, o := range opts {
 		o(&j)
+	}
+
+	if j.bearerToken != "" {
+		client.Auth.SetBearerToken(j.bearerToken)
+	} else {
+		client.Auth.SetBasicAuth(username, password)
 	}
 
 	return j, nil

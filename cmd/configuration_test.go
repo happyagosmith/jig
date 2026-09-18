@@ -34,3 +34,43 @@ func TestGetIssuePatternsFromConfigFile(t *testing.T) {
 		assert.Equal(t, `#(\d+)`, patterns[2].Pattern)
 	}
 }
+
+func TestConfigureJira(t *testing.T) {
+	t.Cleanup(func() { viper.Reset() })
+
+	t.Run("returns error when jiraURL is missing", func(t *testing.T) {
+		viper.Reset()
+		viper.Set(JiraUsername, "user")
+		viper.Set(JiraPassword, "pass")
+
+		_, err := ConfigureJira()
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error when neither bearer token nor username/password are set", func(t *testing.T) {
+		viper.Reset()
+		viper.Set(JiraURL, "https://jira.example.com")
+
+		_, err := ConfigureJira()
+		assert.Error(t, err)
+	})
+
+	t.Run("succeeds with username and password", func(t *testing.T) {
+		viper.Reset()
+		viper.Set(JiraURL, "https://jira.example.com")
+		viper.Set(JiraUsername, "user")
+		viper.Set(JiraPassword, "pass")
+
+		_, err := ConfigureJira()
+		assert.NoError(t, err)
+	})
+
+	t.Run("succeeds with bearer token only", func(t *testing.T) {
+		viper.Reset()
+		viper.Set(JiraURL, "https://jira.example.com")
+		viper.Set(JiraBearerToken, "my-bearer-token")
+
+		_, err := ConfigureJira()
+		assert.NoError(t, err)
+	})
+}

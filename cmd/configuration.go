@@ -50,6 +50,7 @@ const (
 	JiraURL                 = "jiraURL"
 	JiraUsername            = "jiraUsername"
 	JiraPassword            = "jiraPassword"
+	JiraBearerToken         = "jiraBearerToken"
 	JiraClosedFeatureFilter = "jiraClosedFeatureFilter"
 	JiraFixedBugFilter      = "jiraFixedBugFilter"
 	JiraKnownIssuesJQL      = "jiraKnownIssuesJQL"
@@ -161,6 +162,9 @@ func InitConfiguration(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(JiraPassword, "", "Jira password/token with read REST API permissions")
 	viper.BindPFlag(JiraPassword, cmd.PersistentFlags().Lookup(JiraPassword))
 
+	cmd.PersistentFlags().String(JiraBearerToken, "", "Jira bearer token with read REST API permissions (alternative to jiraUsername/jiraPassword)")
+	viper.BindPFlag(JiraBearerToken, cmd.PersistentFlags().Lookup(JiraBearerToken))
+
 	cmd.PersistentFlags().String(JiraClosedFeatureFilter, "Story:GOLIVE,TECH TASK:Completata", "List of filters type:status that identify the closed features")
 	viper.BindPFlag(JiraClosedFeatureFilter, cmd.PersistentFlags().Lookup(JiraClosedFeatureFilter))
 
@@ -206,23 +210,33 @@ func addJiraOpt(label string, value string, opts *[]issuetrackers.JiraOpt, opt f
 }
 
 func ConfigureJira() (*issuetrackers.Jira, error) {
-	if GetConfigString(JiraURL) == "" || GetConfigString(JiraUsername) == "" || GetConfigString(JiraPassword) == "" {
-		return nil, fmt.Errorf("jiraURL, jiraUsername and jiraPassword are required")
+	url := GetConfigString(JiraURL)
+	username := GetConfigString(JiraUsername)
+	password := GetConfigString(JiraPassword)
+	bearerToken := GetConfigString(JiraBearerToken)
+
+	if url == "" {
+		return nil, fmt.Errorf("jiraURL is required")
+	}
+	if bearerToken == "" && (username == "" || password == "") {
+		return nil, fmt.Errorf("jiraBearerToken, or jiraUsername and jiraPassword, are required")
 	}
 
 	var opts []issuetrackers.JiraOpt
 	addJiraOpt("jiraClosedFeatureFilter", GetConfigString(JiraClosedFeatureFilter), &opts, issuetrackers.WithClosedFeatureFilter)
 	addJiraOpt("jiraFixedBugFilter", GetConfigString(JiraFixedBugFilter), &opts, issuetrackers.WithFixedBugFilter)
 	fmt.Printf("using %s -> %s\n", "jiraKnownIssuesJQL", GetConfigString(JiraKnownIssuesJQL))
-	fmt.Printf("using %s -> %s\n", JiraURL, GetConfigString(JiraURL))
+	fmt.Printf("using %s -> %s\n", JiraURL, url)
 
 	opts = append(opts, issuetrackers.WithKnownIssueJql(GetConfigString(JiraKnownIssuesJQL)))
-	jiraTracker, err := issuetrackers.NewJira(
-		GetConfigString(JiraURL),
-		GetConfigString(JiraUsername),
-		GetConfigString(JiraPassword),
-		opts...,
-	)
+	if bearerToken != "" {
+		fmt.Println("using jiraBearerToken for Jira authentication")
+		opts = append(opts, issuetrackers.WithBearerToken(bearerToken))
+	} else {
+		fmt.Println("using jiraUsername/jiraPassword for Jira authentication")
+	}
+
+	jiraTracker, err := issuetrackers.NewJira(url, username, password, opts...)
 
 	return &jiraTracker, err
 }

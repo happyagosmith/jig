@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/happyagosmith/jig/internal/entities"
@@ -146,6 +147,43 @@ func TestJira(t *testing.T) {
 		assert.Equal(t, "this is a story", issues[0].IssueSummary)
 		assert.Equal(t, "Story", issues[0].IssueType)
 		assert.Equal(t, "GOLIVE", issues[0].IssueStatus)
+	})
+
+	t.Run("test jira uses bearer token when configured", func(t *testing.T) {
+		var gotAuthHeader string
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotAuthHeader = r.Header.Get("Authorization")
+			w.WriteHeader(200)
+			b, _ := os.ReadFile("testdata/jira-issues.json")
+			w.Write(b)
+		}))
+		defer srv.Close()
+
+		jira, err := issuetrackers.NewJira(srv.URL, "", "",
+			issuetrackers.WithBearerToken("my-bearer-token"))
+		assert.NoError(t, err, "NewJira error must be nil")
+
+		_, err = jira.GetIssues(context.Background(), &entities.EnrichedRepo{}, []string{"test"})
+		assert.NoError(t, err, "GetIssues error must be nil")
+		assert.Equal(t, "Bearer my-bearer-token", gotAuthHeader)
+	})
+
+	t.Run("test jira uses basic auth when no bearer token is configured", func(t *testing.T) {
+		var gotAuthHeader string
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotAuthHeader = r.Header.Get("Authorization")
+			w.WriteHeader(200)
+			b, _ := os.ReadFile("testdata/jira-issues.json")
+			w.Write(b)
+		}))
+		defer srv.Close()
+
+		jira, err := issuetrackers.NewJira(srv.URL, "jiraUsername", "jiraPassword")
+		assert.NoError(t, err, "NewJira error must be nil")
+
+		_, err = jira.GetIssues(context.Background(), &entities.EnrichedRepo{}, []string{"test"})
+		assert.NoError(t, err, "GetIssues error must be nil")
+		assert.True(t, strings.HasPrefix(gotAuthHeader, "Basic "))
 	})
 
 	t.Run("test api error", func(t *testing.T) {
